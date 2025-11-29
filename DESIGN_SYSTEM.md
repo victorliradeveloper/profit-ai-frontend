@@ -1,6 +1,6 @@
-# 🎨 Sonora AI Design System
+# 🎨 Flashdeck AI Design System
 
-Sistema de design completo para o projeto Sonora AI, baseado em Tailwind CSS.
+Sistema de design completo para o projeto Flashdeck AI, baseado em Tailwind CSS.
 
 ## 📋 Índice
 
@@ -19,7 +19,7 @@ Sistema de design completo para o projeto Sonora AI, baseado em Tailwind CSS.
 
 ### Cores Primárias
 
-A cor primária é um **indigo** que representa a identidade visual principal do Sonora AI.
+A cor primária é um **indigo** que representa a identidade visual principal do Flashdeck AI.
 
 ```html
 <!-- Uso básico -->
@@ -375,7 +375,7 @@ Use as classes padrão do Tailwind com espaçamentos customizados adicionais:
 <!-- Header com gradiente primário -->
 <header class="bg-gradient-primary text-white shadow-lg">
   <nav class="container mx-auto px-4 py-4">
-    <h1 class="text-2xl font-bold">Sonora AI</h1>
+    <h1 class="text-2xl font-bold">Flashdeck AI</h1>
   </nav>
 </header>
 

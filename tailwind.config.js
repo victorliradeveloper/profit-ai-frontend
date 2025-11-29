@@ -5,7 +5,7 @@ module.exports = {
   ],
   theme: {
     extend: {
-      // Paleta de Cores - Sonora AI Design System
+      // Paleta de Cores - Flashdeck AI Design System
       colors: {
         // Cores Primárias
         primary: {
