@@ -12,78 +12,137 @@ export interface LoginResponse {
   token: string;
 }
 
+export interface UpdateProfileRequest {
+  name?: string;
+  email?: string;
+}
+
+export interface UpdateProfileResponse {
+  name?: string;
+  email?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8080/v1/auth';
+  private readonly apiUrl = 'http://localhost:8080/v1/auth';
+  private readonly STORAGE_KEYS = {
+    TOKEN: 'token',
+    USER_NAME: 'userName',
+    USER_EMAIL: 'userEmail'
+  } as const;
 
   constructor(private http: HttpClient) {}
 
-  login(credentials: LoginRequest): Observable<LoginResponse> {
-    const headers = new HttpHeaders({
+  private getAuthHeaders(): HttpHeaders {
+    const token = this.getToken();
+    return new HttpHeaders({
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    });
+  }
+
+  private getDefaultHeaders(): HttpHeaders {
+    return new HttpHeaders({
       'Content-Type': 'application/json'
     });
+  }
 
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials, { headers })
-      .pipe(
-        tap(response => {
-          // Salvar token, nome e email do usuário no localStorage
-          if (response.token) {
-            localStorage.setItem('token', response.token);
-            localStorage.setItem('userName', response.name);
-            localStorage.setItem('userEmail', credentials.email);
-          }
-        }),
-        catchError(error => {
-          console.error('Login error in service:', error);
-          return throwError(() => error);
-        })
-      );
+  private saveUserData(name: string, email: string, token?: string): void {
+    if (token) {
+      localStorage.setItem(this.STORAGE_KEYS.TOKEN, token);
+    }
+    localStorage.setItem(this.STORAGE_KEYS.USER_NAME, name);
+    localStorage.setItem(this.STORAGE_KEYS.USER_EMAIL, email);
+  }
+
+  login(credentials: LoginRequest): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(
+      `${this.apiUrl}/login`, 
+      credentials, 
+      { headers: this.getDefaultHeaders() }
+    ).pipe(
+      tap(response => {
+        if (response.token && response.name) {
+          this.saveUserData(response.name, credentials.email, response.token);
+        }
+      }),
+      catchError(error => {
+        console.error('Login error in service:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   register(userData: { email: string; password: string; name: string }): Observable<LoginResponse> {
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json'
-    });
-
-    return this.http.post<LoginResponse>(`${this.apiUrl}/register`, userData, { headers })
-      .pipe(
-        tap(response => {
-          // Salvar token, nome e email do usuário no localStorage
-          if (response.token) {
-            localStorage.setItem('token', response.token);
-            localStorage.setItem('userName', response.name);
-            localStorage.setItem('userEmail', userData.email);
-          }
-        }),
-        catchError(error => {
-          console.error('Register error in service:', error);
-          return throwError(() => error);
-        })
-      );
+    return this.http.post<LoginResponse>(
+      `${this.apiUrl}/register`, 
+      userData, 
+      { headers: this.getDefaultHeaders() }
+    ).pipe(
+      tap(response => {
+        if (response.token && response.name) {
+          this.saveUserData(response.name, userData.email, response.token);
+        }
+      }),
+      catchError(error => {
+        console.error('Register error in service:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
+    Object.values(this.STORAGE_KEYS).forEach(key => {
+      localStorage.removeItem(key);
+    });
   }
 
   getUserEmail(): string | null {
-    return localStorage.getItem('userEmail');
+    return localStorage.getItem(this.STORAGE_KEYS.USER_EMAIL);
   }
 
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('token');
+    return !!this.getToken();
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return localStorage.getItem(this.STORAGE_KEYS.TOKEN);
   }
 
   getUserName(): string | null {
-    return localStorage.getItem('userName');
+    return localStorage.getItem(this.STORAGE_KEYS.USER_NAME);
+  }
+
+  updateProfile(profileData: UpdateProfileRequest): Observable<UpdateProfileResponse> {
+    if (!this.isAuthenticated()) {
+      return throwError(() => new Error('User is not authenticated'));
+    }
+
+    return this.http.put<UpdateProfileResponse>(
+      `${this.apiUrl}/profile`, 
+      profileData, 
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      tap(response => {
+        // Atualizar localStorage com a resposta do servidor ou com os dados enviados
+        const updatedData = response || profileData;
+        const currentName = this.getUserName();
+        const currentEmail = this.getUserEmail();
+        
+        if (updatedData.name && updatedData.name !== currentName) {
+          localStorage.setItem(this.STORAGE_KEYS.USER_NAME, updatedData.name);
+        }
+        if (updatedData.email && updatedData.email !== currentEmail) {
+          localStorage.setItem(this.STORAGE_KEYS.USER_EMAIL, updatedData.email);
+        }
+      }),
+      catchError(error => {
+        console.error('Update profile error in service:', error);
+        return throwError(() => error);
+      })
+    );
   }
 }
 
