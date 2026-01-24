@@ -1,26 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap, catchError, throwError } from 'rxjs';
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  name: string;
-  token: string;
-}
-
-export interface UpdateProfileRequest {
-  name?: string;
-  email?: string;
-}
-
-export interface UpdateProfileResponse {
-  name?: string;
-  email?: string;
-}
+import { LoginRequest, LoginResponse, UpdateProfileRequest, UpdateProfileResponse } from './auth.types';
 
 @Injectable({
   providedIn: 'root'

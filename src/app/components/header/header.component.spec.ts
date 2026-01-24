@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/angular';
 import { HeaderComponent } from './header.component';
-import { AuthService } from '../../services/auth.service';
+import { AuthService } from '../../services/auth/auth.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
