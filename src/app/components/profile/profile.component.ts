@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-profile',
@@ -21,11 +22,24 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // Estado de edição
   isEditing: boolean = false;
   isLoading: boolean = false;
+  isChangingPassword: boolean = false;
+  isChangingPasswordLoading: boolean = false;
   errorMessage: string = '';
   successMessage: string = '';
 
+  passwordData = {
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  };
+
+  showCurrentPassword: boolean = false;
+  showNewPassword: boolean = false;
+  showConfirmPassword: boolean = false;
+
   private readonly EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   private readonly MIN_NAME_LENGTH = 2;
+  private readonly MIN_PASSWORD_LENGTH = 6;
   private messageTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(
@@ -70,6 +84,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
+  
+
   private showSuccessMessage(message: string, duration: number = 3000): void {
     this.successMessage = message;
     this.errorMessage = '';
@@ -107,6 +123,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return null;
   }
 
+  private validatePassword(password: string): string | null {
+    if (!password) {
+      return 'A senha é obrigatória';
+    }
+    if (password.length < this.MIN_PASSWORD_LENGTH) {
+      return `A senha deve ter pelo menos ${this.MIN_PASSWORD_LENGTH} caracteres`;
+    }
+    return null;
+  }
+
   private hasChanges(): boolean {
     const nameChanged = this.editedName.trim() !== (this.userName || '');
     const emailChanged = this.editedEmail.trim() !== (this.userEmail || '');
@@ -123,6 +149,68 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.isEditing = false;
     this.resetEditedFields();
     this.clearMessages();
+  }
+
+  startChangingPassword(): void {
+    this.isChangingPassword = true;
+    this.resetPasswordFields();
+    this.clearMessages();
+  }
+
+  cancelChangingPassword(): void {
+    this.isChangingPassword = false;
+    this.resetPasswordFields();
+    this.clearMessages();
+  }
+
+  togglePasswordVisibility(field: 'current' | 'new' | 'confirm'): void {
+    if (field === 'current') this.showCurrentPassword = !this.showCurrentPassword;
+    if (field === 'new') this.showNewPassword = !this.showNewPassword;
+    if (field === 'confirm') this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  changePassword(): void {
+    if (!this.passwordData.currentPassword) {
+      this.showErrorMessage('Por favor, informe sua senha atual');
+      return;
+    }
+
+    const newPasswordError = this.validatePassword(this.passwordData.newPassword);
+    if (newPasswordError) {
+      this.showErrorMessage(newPasswordError);
+      return;
+    }
+
+    if (this.passwordData.newPassword !== this.passwordData.confirmPassword) {
+      this.showErrorMessage('As senhas não coincidem');
+      return;
+    }
+
+    if (this.passwordData.currentPassword === this.passwordData.newPassword) {
+      this.showErrorMessage('A nova senha deve ser diferente da senha atual');
+      return;
+    }
+
+    this.isChangingPasswordLoading = true;
+    this.clearMessages();
+
+    this.authService.changePassword({
+      currentPassword: this.passwordData.currentPassword,
+      newPassword: this.passwordData.newPassword
+    }).pipe(
+      finalize(() => {
+        this.isChangingPasswordLoading = false;
+      })
+    ).subscribe({
+      next: () => {
+        this.isChangingPassword = false;
+        this.resetPasswordFields();
+        this.showSuccessMessage('Senha alterada com sucesso!');
+      },
+      error: (error: any) => {
+        this.handlePasswordChangeError(error);
+      }
+    });
   }
 
   saveProfile(): void {
@@ -153,9 +241,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
       email: this.editedEmail.trim()
     };
 
-    this.authService.updateProfile(profileData).subscribe({
-      next: (response) => {
+    this.authService.updateProfile(profileData).pipe(
+      finalize(() => {
         this.isLoading = false;
+      })
+    ).subscribe({
+      next: (response) => {
         // Atualizar com a resposta do servidor ou com os dados enviados
         this.userName = response?.name || profileData.name;
         this.userEmail = response?.email || profileData.email;
@@ -163,10 +254,20 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.showSuccessMessage('Perfil atualizado com sucesso!');
       },
       error: (error) => {
-        this.isLoading = false;
         this.handleUpdateError(error);
       }
     });
+  }
+
+  private resetPasswordFields(): void {
+    this.passwordData = {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    };
+    this.showCurrentPassword = false;
+    this.showNewPassword = false;
+    this.showConfirmPassword = false;
   }
 
   private handleUpdateError(error: any): void {
@@ -186,6 +287,35 @@ export class ProfileComponent implements OnInit, OnDestroy {
       this.showErrorMessage('Erro ao atualizar perfil. Tente novamente.');
     }
     console.error('Update profile error:', error);
+  }
+
+  private handlePasswordChangeError(error: any): void {
+    if (error.status === 401) {
+      this.showErrorMessage('Senha atual incorreta.');
+      return;
+    }
+
+    if (error.status === 403) {
+      this.showErrorMessage('Sessão expirada. Por favor, faça login novamente.');
+      setTimeout(() => {
+        this.logout();
+      }, 2000);
+      return;
+    }
+
+    if (error.status === 400) {
+      const serverMessage = error.error?.message || error.error?.error;
+      this.showErrorMessage(serverMessage || 'Dados inválidos. Verifique as informações.');
+      return;
+    }
+
+    if (error.status === 0 || error.status >= 500) {
+      this.showErrorMessage('Erro no servidor. Tente novamente mais tarde.');
+      return;
+    }
+
+    this.showErrorMessage('Erro ao alterar senha. Tente novamente.');
+    console.error('Change password error:', error);
   }
 
   logout(): void {

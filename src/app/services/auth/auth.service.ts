@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap, catchError, throwError } from 'rxjs';
-import { LoginRequest, LoginResponse, UpdateProfileRequest, UpdateProfileResponse } from './auth.types';
+import { LoginRequest, LoginResponse, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse } from './auth.types';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly apiUrl = 'http://localhost:8080/v1/auth';
+  private readonly apiUrl = `${environment.apiBaseUrl}/v1/auth`;
   private readonly STORAGE_KEYS = {
     TOKEN: 'token',
     USER_NAME: 'userName',
@@ -15,6 +16,13 @@ export class AuthService {
   } as const;
 
   constructor(private http: HttpClient) {}
+
+  private handleHttpError(operation: string) {
+    return (error: unknown) => {
+      console.error(`${operation} error in service:`, error);
+      return throwError(() => error);
+    };
+  }
 
   private getAuthHeaders(): HttpHeaders {
     const token = this.getToken();
@@ -49,10 +57,7 @@ export class AuthService {
           this.saveUserData(response.name, credentials.email, response.token);
         }
       }),
-      catchError(error => {
-        console.error('Login error in service:', error);
-        return throwError(() => error);
-      })
+      catchError(this.handleHttpError('Login'))
     );
   }
 
@@ -67,10 +72,7 @@ export class AuthService {
           this.saveUserData(response.name, userData.email, response.token);
         }
       }),
-      catchError(error => {
-        console.error('Register error in service:', error);
-        return throwError(() => error);
-      })
+      catchError(this.handleHttpError('Register'))
     );
   }
 
@@ -119,10 +121,21 @@ export class AuthService {
           localStorage.setItem(this.STORAGE_KEYS.USER_EMAIL, updatedData.email);
         }
       }),
-      catchError(error => {
-        console.error('Update profile error in service:', error);
-        return throwError(() => error);
-      })
+      catchError(this.handleHttpError('Update profile'))
+    );
+  }
+
+  changePassword(passwordData: ChangePasswordRequest): Observable<ChangePasswordResponse> {
+    if (!this.isAuthenticated()) {
+      return throwError(() => new Error('User is not authenticated'));
+    }
+
+    return this.http.put<ChangePasswordResponse>(
+      `${this.apiUrl}/password`,
+      passwordData,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      catchError(this.handleHttpError('Change password'))
     );
   }
 }
