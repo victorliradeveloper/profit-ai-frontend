@@ -107,8 +107,18 @@
                 (click)="togglePasswordVisibility('current')"
                 class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 [attr.aria-label]="showCurrentPassword ? 'Ocultar senha atual' : 'Mostrar senha atual'">
-                <span *ngIf="!showCurrentPassword">Mostrar</span>
-                <span *ngIf="showCurrentPassword">Ocultar</span>
+                <span class="sr-only" *ngIf="!showCurrentPassword">Mostrar</span>
+                <span class="sr-only" *ngIf="showCurrentPassword">Ocultar</span>
+                <svg *ngIf="!showCurrentPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                  <ng-container *ngFor="let d of ICONS.eye">
+                    <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="d" />
+                  </ng-container>
+                </svg>
+                <svg *ngIf="showCurrentPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                  <ng-container *ngFor="let d of ICONS.eyeSlash">
+                    <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="d" />
+                  </ng-container>
+                </svg>
               </button>
             </div>
             </div>
@@ -136,8 +146,18 @@
                   (click)="togglePasswordVisibility('new')"
                   class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   [attr.aria-label]="showNewPassword ? 'Ocultar nova senha' : 'Mostrar nova senha'">
-                  <span *ngIf="!showNewPassword">Mostrar</span>
-                  <span *ngIf="showNewPassword">Ocultar</span>
+                  <span class="sr-only" *ngIf="!showNewPassword">Mostrar</span>
+                  <span class="sr-only" *ngIf="showNewPassword">Ocultar</span>
+                  <svg *ngIf="!showNewPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <ng-container *ngFor="let d of ICONS.eye">
+                      <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="d" />
+                    </ng-container>
+                  </svg>
+                  <svg *ngIf="showNewPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <ng-container *ngFor="let d of ICONS.eyeSlash">
+                      <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="d" />
+                    </ng-container>
+                  </svg>
                 </button>
               </div>
               <p class="text-xs text-gray-500 mt-1">Dica: use letras e números para uma senha mais forte.</p>
@@ -166,8 +186,18 @@
                   (click)="togglePasswordVisibility('confirm')"
                   class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   [attr.aria-label]="showConfirmPassword ? 'Ocultar confirmação de senha' : 'Mostrar confirmação de senha'">
-                  <span *ngIf="!showConfirmPassword">Mostrar</span>
-                  <span *ngIf="showConfirmPassword">Ocultar</span>
+                  <span class="sr-only" *ngIf="!showConfirmPassword">Mostrar</span>
+                  <span class="sr-only" *ngIf="showConfirmPassword">Ocultar</span>
+                  <svg *ngIf="!showConfirmPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <ng-container *ngFor="let d of ICONS.eye">
+                      <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="d" />
+                    </ng-container>
+                  </svg>
+                  <svg *ngIf="showConfirmPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <ng-container *ngFor="let d of ICONS.eyeSlash">
+                      <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="d" />
+                    </ng-container>
+                  </svg>
                 </button>
               </div>
             </div>

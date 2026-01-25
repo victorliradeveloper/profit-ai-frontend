@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
+import { ICONS } from '../../constants/icons';
 
 @Component({
   selector: 'app-register',
@@ -11,6 +12,10 @@ import { AuthService } from '../../services/auth/auth.service';
   templateUrl: './register.component.html'
 })
 export class RegisterComponent {
+  readonly ICONS = ICONS;
+  showPassword: boolean = false;
+  showConfirmPassword: boolean = false;
+
   registerData = {
     name: '',
     email: '',
@@ -58,7 +63,7 @@ export class RegisterComponent {
     console.log('Enviando registro:', registerPayload);
 
     this.authService.register(registerPayload).subscribe({
-      next: (response) => {
+      next: () => {
         this.isLoading = false;
         this.successMessage = 'Conta criada com sucesso! Redirecionando...';
         // Redirecionar para a página de perfil após 1 segundo
@@ -66,7 +71,7 @@ export class RegisterComponent {
           this.router.navigate(['/profile']);
         }, 1000);
       },
-      error: (error) => {
+      error: (error: any) => {
         this.isLoading = false;
         console.error('Register error:', error);
         

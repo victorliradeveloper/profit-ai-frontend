@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
 import { finalize } from 'rxjs';
+import { ICONS } from '../../constants/icons';
 
 @Component({
   selector: 'app-profile',
@@ -12,6 +13,7 @@ import { finalize } from 'rxjs';
   templateUrl: './profile.component.html'
 })
 export class ProfileComponent implements OnInit, OnDestroy {
+  readonly ICONS = ICONS;
   userName: string | null = null;
   userEmail: string | null = null;
   
