@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap, catchError, throwError } from 'rxjs';
-import { LoginRequest, LoginResponse, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse } from './auth.types';
+import { LoginRequest, LoginResponse, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse, UpdateProfileImageResponse } from './auth.types';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -12,7 +12,8 @@ export class AuthService {
   private readonly STORAGE_KEYS = {
     TOKEN: 'token',
     USER_NAME: 'userName',
-    USER_EMAIL: 'userEmail'
+    USER_EMAIL: 'userEmail',
+    USER_AVATAR_URL: 'userAvatarUrl'
   } as const;
 
   constructor(private http: HttpClient) {}
@@ -28,6 +29,14 @@ export class AuthService {
     const token = this.getToken();
     return new HttpHeaders({
       'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    });
+  }
+
+  private getAuthHeadersForFormData(): HttpHeaders {
+    // Não setar Content-Type: o browser precisa definir o boundary do multipart/form-data
+    const token = this.getToken();
+    return new HttpHeaders({
       ...(token && { 'Authorization': `Bearer ${token}` })
     });
   }
@@ -55,6 +64,9 @@ export class AuthService {
       tap(response => {
         if (response.token && response.name) {
           this.saveUserData(response.name, credentials.email, response.token);
+          if (response.avatarUrl) {
+            localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, response.avatarUrl);
+          }
         }
       }),
       catchError(this.handleHttpError('Login'))
@@ -70,6 +82,9 @@ export class AuthService {
       tap(response => {
         if (response.token && response.name) {
           this.saveUserData(response.name, userData.email, response.token);
+          if (response.avatarUrl) {
+            localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, response.avatarUrl);
+          }
         }
       }),
       catchError(this.handleHttpError('Register'))
@@ -84,6 +99,10 @@ export class AuthService {
 
   getUserEmail(): string | null {
     return localStorage.getItem(this.STORAGE_KEYS.USER_EMAIL);
+  }
+
+  getUserAvatarUrl(): string | null {
+    return localStorage.getItem(this.STORAGE_KEYS.USER_AVATAR_URL);
   }
 
   isAuthenticated(): boolean {
@@ -120,8 +139,35 @@ export class AuthService {
         if (updatedData.email && updatedData.email !== currentEmail) {
           localStorage.setItem(this.STORAGE_KEYS.USER_EMAIL, updatedData.email);
         }
+        if (updatedData.avatarUrl) {
+          localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, updatedData.avatarUrl);
+        }
       }),
       catchError(this.handleHttpError('Update profile'))
+    );
+  }
+
+  updateProfileImage(file: File): Observable<UpdateProfileImageResponse> {
+    if (!this.isAuthenticated()) {
+      return throwError(() => new Error('User is not authenticated'));
+    }
+
+    const formData = new FormData();
+    // Backend comum: espera "file" ou "image". Usando "file" como padrão.
+    formData.append('file', file);
+
+    return this.http.put<UpdateProfileImageResponse>(
+      `${this.apiUrl}/profile/image`,
+      formData,
+      { headers: this.getAuthHeadersForFormData() }
+    ).pipe(
+      tap(response => {
+        const url = response?.avatarUrl || response?.imageUrl || response?.photoUrl;
+        if (url) {
+          localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, url);
+        }
+      }),
+      catchError(this.handleHttpError('Update profile image'))
     );
   }
 
