@@ -6,6 +6,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   name: string;
   token: string;
+  avatarUrl?: string;
 }
 
 export interface UpdateProfileRequest {
@@ -16,6 +17,7 @@ export interface UpdateProfileRequest {
 export interface UpdateProfileResponse {
   name?: string;
   email?: string;
+  avatarUrl?: string;
 }
 
 export interface ChangePasswordRequest {
@@ -24,5 +26,12 @@ export interface ChangePasswordRequest {
 }
 
 export interface ChangePasswordResponse {
+  message?: string;
+}
+
+export interface UpdateProfileImageResponse {
+  avatarUrl?: string;
+  imageUrl?: string;
+  photoUrl?: string;
   message?: string;
 }
