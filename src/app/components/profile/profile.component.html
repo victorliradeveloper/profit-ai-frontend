@@ -83,6 +83,14 @@
         </div>
 
         <div *ngIf="isChangingPassword" class="space-y-4 bg-gray-50 border border-gray-200 rounded-xl p-5">
+          <!-- Mensagens específicas do fluxo de senha -->
+          <div *ngIf="passwordSuccessMessage" class="p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+            {{ passwordSuccessMessage }}
+          </div>
+          <div *ngIf="passwordErrorMessage" class="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            {{ passwordErrorMessage }}
+          </div>
+
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="sm:col-span-2">
             <label
@@ -96,9 +104,14 @@
                 id="current-password"
                 [type]="showCurrentPassword ? 'text' : 'password'"
                 [(ngModel)]="passwordData.currentPassword"
+                (ngModelChange)="onPasswordInput()"
+                (blur)="markPasswordTouched('current')"
                 required
                 autocomplete="current-password"
                 class="w-full pr-12 px-4 py-3 border border-gray-300 rounded-lg text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-white"
+                [class.border-red-500]="currentPasswordValidationError"
+                [attr.aria-invalid]="currentPasswordValidationError ? 'true' : 'false'"
+                [attr.aria-describedby]="currentPasswordValidationError ? 'current-password-error' : null"
                 placeholder="Digite sua senha atual"
                 aria-label="Senha atual"
                 aria-required="true">
@@ -121,6 +134,9 @@
                 </svg>
               </button>
             </div>
+            <p *ngIf="currentPasswordValidationError" id="current-password-error" class="mt-2 text-xs text-red-600">
+              {{ currentPasswordValidationError }}
+            </p>
             </div>
 
             <div>
@@ -134,10 +150,15 @@
                   id="new-password"
                   [type]="showNewPassword ? 'text' : 'password'"
                   [(ngModel)]="passwordData.newPassword"
+                  (ngModelChange)="onPasswordInput()"
+                  (blur)="markPasswordTouched('new')"
                   required
                   minlength="6"
                   autocomplete="new-password"
                   class="w-full pr-12 px-4 py-3 border border-gray-300 rounded-lg text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-white"
+                  [class.border-red-500]="newPasswordValidationError"
+                  [attr.aria-invalid]="newPasswordValidationError ? 'true' : 'false'"
+                  [attr.aria-describedby]="newPasswordValidationError ? 'new-password-error' : null"
                   placeholder="Mínimo 6 caracteres"
                   aria-label="Nova senha"
                   aria-required="true">
@@ -160,6 +181,30 @@
                   </svg>
                 </button>
               </div>
+              <div class="mt-2 flex items-center justify-between gap-3">
+                <span class="text-xs text-gray-500">Força:</span>
+                <span class="text-xs font-semibold" [class]="newPasswordStrength.textClass">{{ newPasswordStrength.label }}</span>
+              </div>
+              <div class="mt-2 h-2 w-full rounded-full bg-gray-200 overflow-hidden" aria-label="Indicador de força da senha">
+                <div
+                  class="h-full transition-all duration-200"
+                  [class]="newPasswordStrength.barClass"
+                  [style.width.%]="(newPasswordStrength.score / 4) * 100">
+                </div>
+              </div>
+              <ul class="mt-3 space-y-1">
+                <li *ngFor="let req of newPasswordRequirements" class="flex items-start gap-2 text-xs">
+                  <span
+                    class="mt-1 inline-block w-2 h-2 rounded-full"
+                    [class.bg-green-500]="req.ok"
+                    [class.bg-gray-300]="!req.ok">
+                  </span>
+                  <span [class.text-gray-700]="req.ok" [class.text-gray-500]="!req.ok">{{ req.label }}</span>
+                </li>
+              </ul>
+              <p *ngIf="newPasswordValidationError" id="new-password-error" class="mt-2 text-xs text-red-600">
+                {{ newPasswordValidationError }}
+              </p>
             </div>
 
             <div>
@@ -173,10 +218,15 @@
                   id="confirm-password"
                   [type]="showConfirmPassword ? 'text' : 'password'"
                   [(ngModel)]="passwordData.confirmPassword"
+                  (ngModelChange)="onPasswordInput()"
+                  (blur)="markPasswordTouched('confirm')"
                   required
                   minlength="6"
                   autocomplete="new-password"
                   class="w-full pr-12 px-4 py-3 border border-gray-300 rounded-lg text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-white"
+                  [class.border-red-500]="confirmPasswordValidationError"
+                  [attr.aria-invalid]="confirmPasswordValidationError ? 'true' : 'false'"
+                  [attr.aria-describedby]="confirmPasswordValidationError ? 'confirm-password-error' : null"
                   placeholder="Repita a nova senha"
                   aria-label="Confirmar nova senha"
                   aria-required="true">
@@ -199,6 +249,9 @@
                   </svg>
                 </button>
               </div>
+              <p *ngIf="confirmPasswordValidationError" id="confirm-password-error" class="mt-2 text-xs text-red-600">
+                {{ confirmPasswordValidationError }}
+              </p>
             </div>
           </div>
 
@@ -215,7 +268,7 @@
             <button
               (click)="changePassword()"
               type="button"
-              [disabled]="isChangingPasswordLoading"
+              [disabled]="!canSubmitPasswordChange || isChangingPasswordLoading"
               class="flex-1 py-3 px-4 bg-gradient-to-br from-primary-500 to-primary-700 text-white border-none rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_5px_15px_rgba(196,235,110,0.35)] disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
               aria-label="Salvar nova senha"
               [attr.aria-busy]="isChangingPasswordLoading">
