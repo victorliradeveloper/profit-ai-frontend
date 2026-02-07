@@ -38,7 +38,7 @@
   <div class="flex-1 flex items-center justify-center px-4 py-10 lg:px-10">
     <div class="bg-white w-full max-w-lg rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.08)] border border-slate-100 p-8 md:p-10">
       <!-- Email/Password Register -->
-      <form (ngSubmit)="onSubmit()" #registerForm="ngForm" class="space-y-6">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
         <div class="space-y-2 text-center">
           <h2 class="text-2xl font-semibold text-slate-900">Crie sua conta</h2>
           <p class="text-sm text-slate-500">Configure seu acesso para acompanhar gastos, metas e alertas inteligentes.</p>
@@ -50,9 +50,7 @@
             <input
               type="text"
               id="name"
-              name="name"
-              [(ngModel)]="registerData.name"
-              required
+              formControlName="name"
               placeholder="Digite seu nome"
               class="w-full py-3 px-4 border border-slate-200 rounded-lg text-base transition-all duration-200 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20"
             >
@@ -63,9 +61,7 @@
             <input
               type="email"
               id="email"
-              name="email"
-              [(ngModel)]="registerData.email"
-              required
+              formControlName="email"
               placeholder="seu@email.com"
               class="w-full py-3 px-4 border border-slate-200 rounded-lg text-base transition-all duration-200 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20"
             >
@@ -77,10 +73,7 @@
               <input
                 [type]="showPassword ? 'text' : 'password'"
                 id="password"
-                name="password"
-                [(ngModel)]="registerData.password"
-                required
-                minlength="6"
+                formControlName="password"
                 placeholder="Mínimo de 6 caracteres"
                 class="w-full py-3 pr-12 px-4 border border-slate-200 rounded-lg text-base transition-all duration-200 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20"
               >
@@ -110,9 +103,7 @@
               <input
                 [type]="showConfirmPassword ? 'text' : 'password'"
                 id="confirmPassword"
-                name="confirmPassword"
-                [(ngModel)]="registerData.confirmPassword"
-                required
+                formControlName="confirmPassword"
                 placeholder="Repita a senha"
                 class="w-full py-3 pr-12 px-4 border border-slate-200 rounded-lg text-base transition-all duration-200 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20"
               >
@@ -137,7 +128,7 @@
           </div>
 
           <div class="flex items-start gap-2">
-            <input type="checkbox" id="terms" required class="mt-1 accent-primary-500">
+            <input type="checkbox" id="terms" formControlName="terms" class="mt-1 accent-primary-500">
             <label for="terms" class="text-sm text-gray-600 leading-relaxed">
               Aceito os <a href="/terms" target="_blank" class="text-primary-600 font-semibold no-underline hover:underline">Termos de Uso</a> e
               <a href="/privacy" target="_blank" class="text-primary-600 font-semibold no-underline hover:underline">Política de Privacidade</a>
@@ -153,7 +144,7 @@
           {{ successMessage }}
         </div>
 
-        <button type="submit" class="w-full py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white border-none rounded-lg text-base font-semibold cursor-pointer transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(16,185,129,0.35)] disabled:opacity-60 disabled:cursor-not-allowed" [disabled]="!registerForm.form.valid || isLoading">
+        <button type="submit" class="w-full py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white border-none rounded-lg text-base font-semibold cursor-pointer transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(16,185,129,0.35)] disabled:opacity-60 disabled:cursor-not-allowed" [disabled]="form.invalid || isLoading">
           <span *ngIf="!isLoading">Criar conta</span>
           <span *ngIf="isLoading">Criando conta...</span>
         </button>

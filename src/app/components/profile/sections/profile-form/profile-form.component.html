@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-6" [formGroup]="form">
   <div class="border-b border-gray-200 pb-4">
     <label
       for="user-name"
@@ -10,12 +10,10 @@
       *ngIf="isEditing"
       id="user-name"
       type="text"
-      [(ngModel)]="editedName"
-      required
-      minlength="2"
+      formControlName="name"
       autocomplete="name"
       class="w-full px-4 py-2 border border-gray-300 rounded-lg text-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
-      [class.border-red-500]="profileState.errorMessage && !editedName.trim()"
+      [class.border-red-500]="isEditing && nameControl.invalid && (nameControl.touched || submitAttempted)"
       placeholder="Digite seu nome"
       aria-label="Nome do usuário"
       aria-required="true">
@@ -32,11 +30,10 @@
       *ngIf="isEditing"
       id="user-email"
       type="email"
-      [(ngModel)]="editedEmail"
-      required
+      formControlName="email"
       autocomplete="email"
       class="w-full px-4 py-2 border border-gray-300 rounded-lg text-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
-      [class.border-red-500]="profileState.errorMessage && !editedEmail.trim()"
+      [class.border-red-500]="isEditing && emailControl.invalid && (emailControl.touched || submitAttempted)"
       placeholder="Digite seu email"
       aria-label="Email do usuário"
       aria-required="true">

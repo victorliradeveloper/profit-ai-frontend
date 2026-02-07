@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../../services/auth/auth.service';
-import { environment } from '../../../../../environments/environment';
+import { FileTransferService } from '../../../../services/files/file-transfer.service';
+import { LoggerService } from '../../../../services/logger/logger.service';
+import { ApiErrorService } from '../../../../services/http/api-error.service';
 
 @Component({
   selector: 'app-profile-image-section',
@@ -29,8 +30,10 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
   private profileImageMessageTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(
-    private http: HttpClient,
     private authService: AuthService,
+    private fileTransfer: FileTransferService,
+    private logger: LoggerService,
+    private apiError: ApiErrorService,
   ) {}
 
   ngOnInit(): void {
@@ -50,12 +53,6 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
     }
   }
 
-  private getBearerHeaders(): HttpHeaders | undefined {
-    const token = this.authService.getToken();
-    if (!token) return undefined;
-    return new HttpHeaders({ Authorization: `Bearer ${token}` });
-  }
-
   private loadPersistedAvatar(): void {
     const stored = this.authService.getUserAvatarStoredValue();
     if (!stored) {
@@ -68,19 +65,14 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const headers = this.getBearerHeaders();
-    this.http.get(
-      `${environment.apiBaseUrl}/download/${encodeURIComponent(stored)}`,
-      { responseType: 'blob', ...(headers ? { headers } : {}) }
-    ).subscribe({
+    this.fileTransfer.download(stored).subscribe({
       next: (blob) => {
         this.revokeUserAvatarObjectUrl();
         this.userAvatarObjectUrl = URL.createObjectURL(blob);
         this.userAvatarUrl = this.userAvatarObjectUrl;
       },
       error: () => {
-        // Fallback: tenta usar URL direta
-        this.userAvatarUrl = `${environment.apiBaseUrl}/download/${encodeURIComponent(stored)}`;
+        this.userAvatarUrl = null;
       }
     });
   }
@@ -141,15 +133,7 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
     this.clearProfileImageMessages();
 
     const file = this.selectedProfileImageFile;
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const headers = this.getBearerHeaders();
-    this.http.post(
-      `${environment.apiBaseUrl}/upload`,
-      formData,
-      { responseType: 'text', ...(headers ? { headers } : {}) }
-    ).pipe(
+    this.fileTransfer.upload(file).pipe(
       finalize(() => {
         this.isUploadingProfileImage = false;
       })
@@ -164,18 +148,10 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
         this.showProfileImageSuccessMessage('Foto de perfil atualizada!');
       },
       error: (error: any) => {
-        const msg =
-          typeof error?.error === 'string'
-            ? error.error
-            : (error?.error?.message || error?.error?.error);
-
-        if (error?.status === 0 || error?.status >= 500) {
-          this.showProfileImageErrorMessage('Erro no servidor. Tente novamente mais tarde.');
-          return;
-        }
-
-        this.showProfileImageErrorMessage(msg || 'Erro ao enviar foto. Tente novamente.');
-        console.error('Upload profile image error:', error);
+        this.showProfileImageErrorMessage(this.apiError.message(error, {
+          fallback: 'Erro ao enviar foto. Tente novamente.'
+        }));
+        this.logger.error('Upload profile image error:', error);
       }
     });
   }

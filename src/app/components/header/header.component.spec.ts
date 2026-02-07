@@ -1,20 +1,25 @@
 import { render, screen } from '@testing-library/angular';
 import { HeaderComponent } from './header.component';
 import { AuthService } from '../../services/auth/auth.service';
+import { AuthStateService } from '../../services/auth/auth-state.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { of } from 'rxjs';
 
 describe('HeaderComponent', () => {
   const mockAuthService = {
-    isAuthenticated: jest.fn(),
-    getUserName: jest.fn(),
     logout: jest.fn(),
+  };
+
+  const unauthSession = {
+    token: null,
+    userName: null,
+    userEmail: null,
+    userAvatar: null
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockAuthService.isAuthenticated.mockReturnValue(false);
-    mockAuthService.getUserName.mockReturnValue(null);
   });
 
   it('should render Profit AI title', async () => {
@@ -22,6 +27,7 @@ describe('HeaderComponent', () => {
       imports: [RouterTestingModule, HttpClientTestingModule],
       providers: [
         { provide: AuthService, useValue: mockAuthService },
+        { provide: AuthStateService, useValue: { session$: of(unauthSession) } },
       ],
     });
 
@@ -34,6 +40,7 @@ describe('HeaderComponent', () => {
       imports: [RouterTestingModule, HttpClientTestingModule],
       providers: [
         { provide: AuthService, useValue: mockAuthService },
+        { provide: AuthStateService, useValue: { session$: of(unauthSession) } },
       ],
     });
 
@@ -42,13 +49,18 @@ describe('HeaderComponent', () => {
   });
 
   it('should show profile and logout button when authenticated', async () => {
-    mockAuthService.isAuthenticated.mockReturnValue(true);
-    mockAuthService.getUserName.mockReturnValue('Test User');
+    const authSession = {
+      token: 'token',
+      userName: 'Test User',
+      userEmail: 'test@example.com',
+      userAvatar: null
+    };
 
     await render(HeaderComponent, {
       imports: [RouterTestingModule, HttpClientTestingModule],
       providers: [
         { provide: AuthService, useValue: mockAuthService },
+        { provide: AuthStateService, useValue: { session$: of(authSession) } },
       ],
     });
 

@@ -1,8 +1,10 @@
-import { Component, OnInit } from "@angular/core";
-import { Router, RouterModule, NavigationEnd } from "@angular/router";
+import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Router, RouterModule } from "@angular/router";
 import { CommonModule } from "@angular/common";
 import { AuthService } from "../../services/auth/auth.service";
-import { filter } from 'rxjs/operators';
+import { Subject } from "rxjs";
+import { takeUntil } from "rxjs/operators";
+import { AuthStateService } from "../../services/auth/auth-state.service";
 
 @Component({
   selector: 'app-header',
@@ -10,38 +12,33 @@ import { filter } from 'rxjs/operators';
   standalone: true,
   imports: [RouterModule, CommonModule]
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements OnInit, OnDestroy {
   isAuthenticated: boolean = false;
   userName: string | null = null;
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private authState: AuthStateService
   ) {}
 
   ngOnInit() {
-    this.checkAuthentication();
-    
-    // Verificar autenticação sempre que a rota mudar
-    this.router.events
-      .pipe(filter(event => event instanceof NavigationEnd))
-      .subscribe(() => {
-        this.checkAuthentication();
+    this.authState.session$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(session => {
+        this.isAuthenticated = !!session.token;
+        this.userName = session.userName;
       });
   }
 
-  checkAuthentication() {
-    this.isAuthenticated = this.authService.isAuthenticated();
-    if (this.isAuthenticated) {
-      this.userName = this.authService.getUserName();
-    } else {
-      this.userName = null;
-    }
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   logout() {
     this.authService.logout();
-    this.checkAuthentication();
     this.router.navigate(['/login']);
   }
 }
