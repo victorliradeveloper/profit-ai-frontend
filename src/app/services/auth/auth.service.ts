@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap, catchError, throwError } from 'rxjs';
-import { LoginRequest, LoginResponse, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse } from './auth.types';
+import { LoginRequest, LoginResponse, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse, AuthProfileResponse } from './auth.types';
 import { environment } from '../../../environments/environment';
 import { LoggerService } from '../logger/logger.service';
 import { AuthStateService } from './auth-state.service';
@@ -15,6 +15,7 @@ export class AuthService {
     TOKEN: 'token',
     USER_NAME: 'userName',
     USER_EMAIL: 'userEmail',
+    USER_AVATAR_KEY: 'userAvatarKey',
     USER_AVATAR_URL: 'userAvatarUrl'
   } as const;
 
@@ -62,9 +63,6 @@ export class AuthService {
       tap(response => {
         if (response.token && response.name) {
           this.saveUserData(response.name, credentials.email, response.token);
-          if (response.avatarUrl) {
-            localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, response.avatarUrl);
-          }
           this.authState.syncFromStorage();
         }
       }),
@@ -81,9 +79,6 @@ export class AuthService {
       tap(response => {
         if (response.token && response.name) {
           this.saveUserData(response.name, userData.email, response.token);
-          if (response.avatarUrl) {
-            localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, response.avatarUrl);
-          }
           this.authState.syncFromStorage();
         }
       }),
@@ -102,29 +97,27 @@ export class AuthService {
     return localStorage.getItem(this.STORAGE_KEYS.USER_EMAIL);
   }
 
-  getUserAvatarUrl(): string | null {
-    const stored = localStorage.getItem(this.STORAGE_KEYS.USER_AVATAR_URL);
-    if (!stored) return null;
+  getUserAvatarKey(): string | null {
+    const key = localStorage.getItem(this.STORAGE_KEYS.USER_AVATAR_KEY);
+    if (key) return key;
 
-    if (/^https?:\/\//i.test(stored) || stored.includes('/')) {
-      return stored;
+    // Compat: versões antigas podem ter salvo no userAvatarUrl
+    const legacy = localStorage.getItem(this.STORAGE_KEYS.USER_AVATAR_URL);
+    if (legacy && !/^https?:\/\//i.test(legacy) && !legacy.includes('/')) {
+      localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_KEY, legacy);
+      return legacy;
     }
-
-    return `${environment.apiBaseUrl}/download/${encodeURIComponent(stored)}`;
+    return null;
   }
 
-  setUserAvatar(value: string | null): void {
+  setUserAvatarKey(value: string | null): void {
     if (!value) {
-      localStorage.removeItem(this.STORAGE_KEYS.USER_AVATAR_URL);
+      localStorage.removeItem(this.STORAGE_KEYS.USER_AVATAR_KEY);
       this.authState.syncFromStorage();
       return;
     }
-    localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, value);
+    localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_KEY, value);
     this.authState.syncFromStorage();
-  }
-
-  getUserAvatarStoredValue(): string | null {
-    return localStorage.getItem(this.STORAGE_KEYS.USER_AVATAR_URL);
   }
 
   isAuthenticated(): boolean {
@@ -160,13 +153,62 @@ export class AuthService {
         if (updatedData.email && updatedData.email !== currentEmail) {
           localStorage.setItem(this.STORAGE_KEYS.USER_EMAIL, updatedData.email);
         }
-        if (updatedData.avatarUrl) {
-          localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, updatedData.avatarUrl);
+        if (typeof updatedData.avatarKey !== 'undefined') {
+          if (updatedData.avatarKey) {
+            localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_KEY, updatedData.avatarKey);
+          } else {
+            localStorage.removeItem(this.STORAGE_KEYS.USER_AVATAR_KEY);
+          }
         }
 
         this.authState.syncFromStorage();
       }),
       catchError(this.handleHttpError('Update profile'))
+    );
+  }
+
+  getProfile(): Observable<AuthProfileResponse> {
+    if (!this.isAuthenticated()) {
+      return throwError(() => new Error('User is not authenticated'));
+    }
+
+    return this.http.get<AuthProfileResponse>(
+      `${this.apiUrl}/profile`,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      tap(profile => {
+        localStorage.setItem(this.STORAGE_KEYS.USER_NAME, profile.name);
+        localStorage.setItem(this.STORAGE_KEYS.USER_EMAIL, profile.email);
+        if (profile.avatarKey) {
+          localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_KEY, profile.avatarKey);
+        } else {
+          localStorage.removeItem(this.STORAGE_KEYS.USER_AVATAR_KEY);
+        }
+        this.authState.syncFromStorage();
+      }),
+      catchError(this.handleHttpError('Get profile'))
+    );
+  }
+
+  updateAvatarKey(avatarKey: string): Observable<AuthProfileResponse> {
+    if (!this.isAuthenticated()) {
+      return throwError(() => new Error('User is not authenticated'));
+    }
+
+    return this.http.put<AuthProfileResponse>(
+      `${this.apiUrl}/profile/avatar`,
+      { avatarKey },
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      tap(profile => {
+        if (profile.avatarKey) {
+          localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_KEY, profile.avatarKey);
+        } else {
+          localStorage.removeItem(this.STORAGE_KEYS.USER_AVATAR_KEY);
+        }
+        this.authState.syncFromStorage();
+      }),
+      catchError(this.handleHttpError('Update avatar'))
     );
   }
 

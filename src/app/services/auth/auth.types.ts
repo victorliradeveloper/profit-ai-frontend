@@ -6,7 +6,6 @@ export interface LoginRequest {
 export interface LoginResponse {
   name: string;
   token: string;
-  avatarUrl?: string;
 }
 
 export interface UpdateProfileRequest {
@@ -15,9 +14,10 @@ export interface UpdateProfileRequest {
 }
 
 export interface UpdateProfileResponse {
+  id?: string;
   name?: string;
   email?: string;
-  avatarUrl?: string;
+  avatarKey?: string | null;
 }
 
 export interface ChangePasswordRequest {
@@ -27,4 +27,11 @@ export interface ChangePasswordRequest {
 
 export interface ChangePasswordResponse {
   message?: string;
+}
+
+export interface AuthProfileResponse {
+  id: string;
+  name: string;
+  email: string;
+  avatarKey: string | null;
 }

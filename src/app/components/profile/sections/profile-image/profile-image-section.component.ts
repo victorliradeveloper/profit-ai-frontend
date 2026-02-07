@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { finalize } from 'rxjs';
+import { finalize, switchMap } from 'rxjs';
 import { AuthService } from '../../../../services/auth/auth.service';
 import { FileTransferService } from '../../../../services/files/file-transfer.service';
 import { LoggerService } from '../../../../services/logger/logger.service';
@@ -38,7 +38,15 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.userName = this.authService.getUserName();
-    this.loadPersistedAvatar();
+    this.authService.getProfile().subscribe({
+      next: (profile) => {
+        this.userName = profile.name;
+        this.loadPersistedAvatar();
+      },
+      error: () => {
+        this.loadPersistedAvatar();
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -54,18 +62,13 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
   }
 
   private loadPersistedAvatar(): void {
-    const stored = this.authService.getUserAvatarStoredValue();
-    if (!stored) {
+    const avatarKey = this.authService.getUserAvatarKey();
+    if (!avatarKey) {
       this.userAvatarUrl = null;
       return;
     }
 
-    if (/^https?:\/\//i.test(stored) || stored.includes('/')) {
-      this.userAvatarUrl = stored;
-      return;
-    }
-
-    this.fileTransfer.download(stored).subscribe({
+    this.fileTransfer.downloadByKey(avatarKey).subscribe({
       next: (blob) => {
         this.revokeUserAvatarObjectUrl();
         this.userAvatarObjectUrl = URL.createObjectURL(blob);
@@ -133,13 +136,14 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
     this.clearProfileImageMessages();
 
     const file = this.selectedProfileImageFile;
-    this.fileTransfer.upload(file).pipe(
+    this.fileTransfer.uploadAvatar(file).pipe(
+      switchMap((res) => this.authService.updateAvatarKey(res.key)),
       finalize(() => {
         this.isUploadingProfileImage = false;
       })
     ).subscribe({
-      next: () => {
-        this.authService.setUserAvatar(file.name);
+      next: (profile) => {
+        this.authService.setUserAvatarKey(profile.avatarKey || null);
         this.loadPersistedAvatar();
 
         this.selectedProfileImageFile = null;
