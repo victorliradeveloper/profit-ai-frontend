@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../../services/auth/auth.service';
-import { getServerMessage } from '../../shared/profile-http.utils';
-import { ProfileSessionService } from '../../shared/profile-session.service';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-profile-image-section',
@@ -21,26 +21,70 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
   profileImageErrorMessage: string = '';
   profileImageSuccessMessage: string = '';
 
-  private readonly MAX_PROFILE_IMAGE_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+  private readonly MAX_PROFILE_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
   private readonly PROFILE_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
   private profileImagePreviewObjectUrl?: string;
+  private userAvatarObjectUrl?: string;
   private profileImageMessageTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(
+    private http: HttpClient,
     private authService: AuthService,
-    private profileSession: ProfileSessionService
   ) {}
 
   ngOnInit(): void {
     this.userName = this.authService.getUserName();
-    this.userAvatarUrl = this.authService.getUserAvatarUrl();
+    this.loadPersistedAvatar();
   }
 
   ngOnDestroy(): void {
     this.clearProfileImageMessageTimeout();
     this.revokeProfileImagePreviewObjectUrl();
+    this.revokeUserAvatarObjectUrl();
   }
+  private revokeUserAvatarObjectUrl(): void {
+    if (this.userAvatarObjectUrl) {
+      URL.revokeObjectURL(this.userAvatarObjectUrl);
+      this.userAvatarObjectUrl = undefined;
+    }
+  }
+
+  private getBearerHeaders(): HttpHeaders | undefined {
+    const token = this.authService.getToken();
+    if (!token) return undefined;
+    return new HttpHeaders({ Authorization: `Bearer ${token}` });
+  }
+
+  private loadPersistedAvatar(): void {
+    const stored = this.authService.getUserAvatarStoredValue();
+    if (!stored) {
+      this.userAvatarUrl = null;
+      return;
+    }
+
+    if (/^https?:\/\//i.test(stored) || stored.includes('/')) {
+      this.userAvatarUrl = stored;
+      return;
+    }
+
+    const headers = this.getBearerHeaders();
+    this.http.get(
+      `${environment.apiBaseUrl}/download/${encodeURIComponent(stored)}`,
+      { responseType: 'blob', ...(headers ? { headers } : {}) }
+    ).subscribe({
+      next: (blob) => {
+        this.revokeUserAvatarObjectUrl();
+        this.userAvatarObjectUrl = URL.createObjectURL(blob);
+        this.userAvatarUrl = this.userAvatarObjectUrl;
+      },
+      error: () => {
+        // Fallback: tenta usar URL direta
+        this.userAvatarUrl = `${environment.apiBaseUrl}/download/${encodeURIComponent(stored)}`;
+      }
+    });
+  }
+
 
   get profileInitials(): string {
     const name = (this.userName || '').trim();
@@ -96,48 +140,41 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
     this.isUploadingProfileImage = true;
     this.clearProfileImageMessages();
 
-    this.authService.updateProfileImage(this.selectedProfileImageFile).pipe(
+    const file = this.selectedProfileImageFile;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const headers = this.getBearerHeaders();
+    this.http.post(
+      `${environment.apiBaseUrl}/upload`,
+      formData,
+      { responseType: 'text', ...(headers ? { headers } : {}) }
+    ).pipe(
       finalize(() => {
         this.isUploadingProfileImage = false;
       })
     ).subscribe({
-      next: (response: any) => {
-        const url = response?.avatarUrl || response?.imageUrl || response?.photoUrl;
-        if (url) {
-          this.userAvatarUrl = url;
-          this.selectedProfileImageFile = null;
-          this.profileImagePreviewUrl = null;
-          this.revokeProfileImagePreviewObjectUrl();
-          this.showProfileImageSuccessMessage(response?.message || 'Foto de perfil atualizada!');
-          return;
-        }
+      next: () => {
+        this.authService.setUserAvatar(file.name);
+        this.loadPersistedAvatar();
 
-        // Se o backend não retornar URL, mantemos o preview para não “quebrar” a imagem (objectURL não é revogado aqui).
-        if (this.profileImagePreviewUrl) {
-          this.userAvatarUrl = this.profileImagePreviewUrl;
-        }
         this.selectedProfileImageFile = null;
-        this.showProfileImageSuccessMessage(response?.message || 'Foto de perfil atualizada!');
+        this.profileImagePreviewUrl = null;
+        this.revokeProfileImagePreviewObjectUrl();
+        this.showProfileImageSuccessMessage('Foto de perfil atualizada!');
       },
       error: (error: any) => {
-        if (error?.status === 401 || error?.status === 403) {
-          this.showProfileImageErrorMessage('Sessão expirada. Por favor, faça login novamente.');
-          this.profileSession.scheduleLogoutToLogin();
-          return;
-        }
-
-        if (error?.status === 400) {
-          const serverMessage = getServerMessage(error);
-          this.showProfileImageErrorMessage(serverMessage || 'Imagem inválida. Verifique o arquivo.');
-          return;
-        }
+        const msg =
+          typeof error?.error === 'string'
+            ? error.error
+            : (error?.error?.message || error?.error?.error);
 
         if (error?.status === 0 || error?.status >= 500) {
           this.showProfileImageErrorMessage('Erro no servidor. Tente novamente mais tarde.');
           return;
         }
 
-        this.showProfileImageErrorMessage('Erro ao enviar foto. Tente novamente.');
+        this.showProfileImageErrorMessage(msg || 'Erro ao enviar foto. Tente novamente.');
         console.error('Upload profile image error:', error);
       }
     });

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap, catchError, throwError } from 'rxjs';
-import { LoginRequest, LoginResponse, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse, UpdateProfileImageResponse } from './auth.types';
+import { LoginRequest, LoginResponse, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse } from './auth.types';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -29,14 +29,6 @@ export class AuthService {
     const token = this.getToken();
     return new HttpHeaders({
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
-    });
-  }
-
-  private getAuthHeadersForFormData(): HttpHeaders {
-    // Não setar Content-Type: o browser precisa definir o boundary do multipart/form-data
-    const token = this.getToken();
-    return new HttpHeaders({
       ...(token && { 'Authorization': `Bearer ${token}` })
     });
   }
@@ -102,6 +94,25 @@ export class AuthService {
   }
 
   getUserAvatarUrl(): string | null {
+    const stored = localStorage.getItem(this.STORAGE_KEYS.USER_AVATAR_URL);
+    if (!stored) return null;
+
+    if (/^https?:\/\//i.test(stored) || stored.includes('/')) {
+      return stored;
+    }
+
+    return `${environment.apiBaseUrl}/download/${encodeURIComponent(stored)}`;
+  }
+
+  setUserAvatar(value: string | null): void {
+    if (!value) {
+      localStorage.removeItem(this.STORAGE_KEYS.USER_AVATAR_URL);
+      return;
+    }
+    localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, value);
+  }
+
+  getUserAvatarStoredValue(): string | null {
     return localStorage.getItem(this.STORAGE_KEYS.USER_AVATAR_URL);
   }
 
@@ -128,7 +139,6 @@ export class AuthService {
       { headers: this.getAuthHeaders() }
     ).pipe(
       tap(response => {
-        // Atualizar localStorage com a resposta do servidor ou com os dados enviados
         const updatedData = response || profileData;
         const currentName = this.getUserName();
         const currentEmail = this.getUserEmail();
@@ -144,30 +154,6 @@ export class AuthService {
         }
       }),
       catchError(this.handleHttpError('Update profile'))
-    );
-  }
-
-  updateProfileImage(file: File): Observable<UpdateProfileImageResponse> {
-    if (!this.isAuthenticated()) {
-      return throwError(() => new Error('User is not authenticated'));
-    }
-
-    const formData = new FormData();
-    // Backend comum: espera "file" ou "image". Usando "file" como padrão.
-    formData.append('file', file);
-
-    return this.http.put<UpdateProfileImageResponse>(
-      `${this.apiUrl}/profile/image`,
-      formData,
-      { headers: this.getAuthHeadersForFormData() }
-    ).pipe(
-      tap(response => {
-        const url = response?.avatarUrl || response?.imageUrl || response?.photoUrl;
-        if (url) {
-          localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, url);
-        }
-      }),
-      catchError(this.handleHttpError('Update profile image'))
     );
   }
 
