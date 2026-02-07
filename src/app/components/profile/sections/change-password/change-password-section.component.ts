@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ICONS } from '../../../../constants/icons';
 import { AuthService } from '../../../../services/auth/auth.service';
+import { LoggerService } from '../../../../services/logger/logger.service';
 import { getServerMessage } from '../../shared/profile-http.utils';
 import { ProfileSessionService } from '../../shared/profile-session.service';
 
@@ -42,7 +43,8 @@ export class ChangePasswordSectionComponent implements OnDestroy {
 
   constructor(
     private authService: AuthService,
-    private profileSession: ProfileSessionService
+    private profileSession: ProfileSessionService,
+    private logger: LoggerService
   ) {}
 
   ngOnDestroy(): void {
@@ -273,7 +275,7 @@ export class ChangePasswordSectionComponent implements OnDestroy {
     }
 
     this.showPasswordErrorMessage('Erro ao alterar senha. Tente novamente.');
-    console.error('Change password error:', error);
+    this.logger.error('Change password error:', error);
   }
 }
 

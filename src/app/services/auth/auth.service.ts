@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { LoginRequest, LoginResponse, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse } from './auth.types';
 import { environment } from '../../../environments/environment';
+import { LoggerService } from '../logger/logger.service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,11 +17,14 @@ export class AuthService {
     USER_AVATAR_URL: 'userAvatarUrl'
   } as const;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private logger: LoggerService
+  ) {}
 
   private handleHttpError(operation: string) {
     return (error: unknown) => {
-      console.error(`${operation} error in service:`, error);
+      this.logger.error(`${operation} error in service:`, error);
       return throwError(() => error);
     };
   }

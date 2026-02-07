@@ -6,6 +6,7 @@ import { AuthService } from '../../../../services/auth/auth.service';
 import { getServerMessage } from '../../shared/profile-http.utils';
 import { ProfileSessionService } from '../../shared/profile-session.service';
 import { ProfileStateService } from '../../shared/profile-state.service';
+import { LoggerService } from '../../../../services/logger/logger.service';
 
 @Component({
   selector: 'app-profile-form',
@@ -29,7 +30,8 @@ export class ProfileFormComponent implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private profileSession: ProfileSessionService,
-    public profileState: ProfileStateService
+    public profileState: ProfileStateService,
+    private logger: LoggerService
   ) {}
 
   ngOnInit(): void {
@@ -162,7 +164,7 @@ export class ProfileFormComponent implements OnInit, OnDestroy {
     }
 
     this.profileState.setError('Erro ao atualizar perfil. Tente novamente.');
-    console.error('Update profile error:', error);
+    this.logger.error('Update profile error:', error);
   }
 }
 

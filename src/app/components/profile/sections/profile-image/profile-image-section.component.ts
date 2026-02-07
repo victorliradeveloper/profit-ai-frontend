@@ -3,6 +3,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../../services/auth/auth.service';
 import { FileTransferService } from '../../../../services/files/file-transfer.service';
+import { LoggerService } from '../../../../services/logger/logger.service';
 
 @Component({
   selector: 'app-profile-image-section',
@@ -30,6 +31,7 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private fileTransfer: FileTransferService,
+    private logger: LoggerService,
   ) {}
 
   ngOnInit(): void {
@@ -155,7 +157,7 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
         }
 
         this.showProfileImageErrorMessage(msg || 'Erro ao enviar foto. Tente novamente.');
-        console.error('Upload profile image error:', error);
+        this.logger.error('Upload profile image error:', error);
       }
     });
   }

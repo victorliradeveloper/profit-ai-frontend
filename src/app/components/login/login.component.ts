@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
 import { ICONS } from '../../constants/icons';
+import { LoggerService } from '../../services/logger/logger.service';
 
 @Component({
   selector: 'app-login',
@@ -25,7 +26,8 @@ export class LoginComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private logger: LoggerService
   ) {}
 
   onSubmit() {
@@ -52,13 +54,12 @@ export class LoginComponent {
         } else {
           this.errorMessage = 'Erro ao fazer login. Tente novamente.';
         }
-        console.error('Login error:', error);
+        this.logger.error('Login error:', error);
       }
     });
   }
 
   loginWithGoogle() {
-    console.log('Google login attempt');
     // Aqui você implementaria a lógica de autenticação com Google
   }
 }

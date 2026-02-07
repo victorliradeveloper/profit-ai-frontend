@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
 import { ICONS } from '../../constants/icons';
+import { LoggerService } from '../../services/logger/logger.service';
 
 @Component({
   selector: 'app-register',
@@ -29,7 +30,8 @@ export class RegisterComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private logger: LoggerService
   ) {}
 
   onSubmit() {
@@ -60,8 +62,6 @@ export class RegisterComponent {
       password: this.registerData.password
     };
 
-    console.log('Enviando registro:', registerPayload);
-
     this.authService.register(registerPayload).subscribe({
       next: () => {
         this.isLoading = false;
@@ -73,7 +73,7 @@ export class RegisterComponent {
       },
       error: (error: any) => {
         this.isLoading = false;
-        console.error('Register error:', error);
+        this.logger.error('Register error:', error);
         
         if (error.status === 409) {
           this.errorMessage = error.error?.message || 'Este email já está cadastrado';
@@ -97,7 +97,6 @@ export class RegisterComponent {
   }
 
   registerWithGoogle() {
-    console.log('Google register attempt');
     // Aqui você implementaria a lógica de cadastro com Google
   }
 }
