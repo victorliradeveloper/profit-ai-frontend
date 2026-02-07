@@ -4,6 +4,7 @@ import { Observable, tap, catchError, throwError } from 'rxjs';
 import { LoginRequest, LoginResponse, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse } from './auth.types';
 import { environment } from '../../../environments/environment';
 import { LoggerService } from '../logger/logger.service';
+import { AuthStateService } from './auth-state.service';
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +20,8 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    private logger: LoggerService
+    private logger: LoggerService,
+    private authState: AuthStateService
   ) {}
 
   private handleHttpError(operation: string) {
@@ -63,6 +65,7 @@ export class AuthService {
           if (response.avatarUrl) {
             localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, response.avatarUrl);
           }
+          this.authState.syncFromStorage();
         }
       }),
       catchError(this.handleHttpError('Login'))
@@ -81,6 +84,7 @@ export class AuthService {
           if (response.avatarUrl) {
             localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, response.avatarUrl);
           }
+          this.authState.syncFromStorage();
         }
       }),
       catchError(this.handleHttpError('Register'))
@@ -91,6 +95,7 @@ export class AuthService {
     Object.values(this.STORAGE_KEYS).forEach(key => {
       localStorage.removeItem(key);
     });
+    this.authState.clear();
   }
 
   getUserEmail(): string | null {
@@ -111,9 +116,11 @@ export class AuthService {
   setUserAvatar(value: string | null): void {
     if (!value) {
       localStorage.removeItem(this.STORAGE_KEYS.USER_AVATAR_URL);
+      this.authState.syncFromStorage();
       return;
     }
     localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, value);
+    this.authState.syncFromStorage();
   }
 
   getUserAvatarStoredValue(): string | null {
@@ -156,6 +163,8 @@ export class AuthService {
         if (updatedData.avatarUrl) {
           localStorage.setItem(this.STORAGE_KEYS.USER_AVATAR_URL, updatedData.avatarUrl);
         }
+
+        this.authState.syncFromStorage();
       }),
       catchError(this.handleHttpError('Update profile'))
     );
