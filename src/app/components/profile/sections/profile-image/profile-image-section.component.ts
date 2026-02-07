@@ -1,9 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../../services/auth/auth.service';
-import { environment } from '../../../../../environments/environment';
+import { FileTransferService } from '../../../../services/files/file-transfer.service';
 
 @Component({
   selector: 'app-profile-image-section',
@@ -29,8 +28,8 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
   private profileImageMessageTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(
-    private http: HttpClient,
     private authService: AuthService,
+    private fileTransfer: FileTransferService,
   ) {}
 
   ngOnInit(): void {
@@ -50,12 +49,6 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
     }
   }
 
-  private getBearerHeaders(): HttpHeaders | undefined {
-    const token = this.authService.getToken();
-    if (!token) return undefined;
-    return new HttpHeaders({ Authorization: `Bearer ${token}` });
-  }
-
   private loadPersistedAvatar(): void {
     const stored = this.authService.getUserAvatarStoredValue();
     if (!stored) {
@@ -68,19 +61,14 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const headers = this.getBearerHeaders();
-    this.http.get(
-      `${environment.apiBaseUrl}/download/${encodeURIComponent(stored)}`,
-      { responseType: 'blob', ...(headers ? { headers } : {}) }
-    ).subscribe({
+    this.fileTransfer.download(stored).subscribe({
       next: (blob) => {
         this.revokeUserAvatarObjectUrl();
         this.userAvatarObjectUrl = URL.createObjectURL(blob);
         this.userAvatarUrl = this.userAvatarObjectUrl;
       },
       error: () => {
-        // Fallback: tenta usar URL direta
-        this.userAvatarUrl = `${environment.apiBaseUrl}/download/${encodeURIComponent(stored)}`;
+        this.userAvatarUrl = null;
       }
     });
   }
@@ -141,15 +129,7 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
     this.clearProfileImageMessages();
 
     const file = this.selectedProfileImageFile;
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const headers = this.getBearerHeaders();
-    this.http.post(
-      `${environment.apiBaseUrl}/upload`,
-      formData,
-      { responseType: 'text', ...(headers ? { headers } : {}) }
-    ).pipe(
+    this.fileTransfer.upload(file).pipe(
       finalize(() => {
         this.isUploadingProfileImage = false;
       })
