@@ -3,6 +3,10 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+export type UploadS3Response = {
+  key: string;
+};
+
 @Injectable({
   providedIn: 'root'
 })
@@ -11,20 +15,20 @@ export class FileTransferService {
     private http: HttpClient
   ) {}
 
-  upload(file: File): Observable<string> {
+  uploadAvatar(file: File): Observable<UploadS3Response> {
     const formData = new FormData();
     formData.append('file', file);
 
-    return this.http.post(
-      `${environment.apiBaseUrl}/upload`,
+    return this.http.post<UploadS3Response>(
+      `${environment.apiBaseUrl}/v1/s3/upload`,
       formData,
-      { responseType: 'text' }
+      {}
     );
   }
 
-  download(filename: string): Observable<Blob> {
+  downloadByKey(key: string): Observable<Blob> {
     return this.http.get(
-      `${environment.apiBaseUrl}/download/${encodeURIComponent(filename)}`,
+      `${environment.apiBaseUrl}/v1/s3/download/${encodeURIComponent(key)}`,
       { responseType: 'blob' }
     );
   }

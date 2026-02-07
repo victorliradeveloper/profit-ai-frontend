@@ -5,7 +5,7 @@ export type AuthSession = {
   token: string | null;
   userName: string | null;
   userEmail: string | null;
-  userAvatar: string | null;
+  userAvatarKey: string | null;
 };
 
 @Injectable({
@@ -16,6 +16,7 @@ export class AuthStateService {
     TOKEN: 'token',
     USER_NAME: 'userName',
     USER_EMAIL: 'userEmail',
+    USER_AVATAR_KEY: 'userAvatarKey',
     USER_AVATAR_URL: 'userAvatarUrl'
   } as const;
 
@@ -35,7 +36,7 @@ export class AuthStateService {
       token: null,
       userName: null,
       userEmail: null,
-      userAvatar: null
+      userAvatarKey: null
     });
   }
 
@@ -44,7 +45,9 @@ export class AuthStateService {
       token: localStorage.getItem(this.STORAGE_KEYS.TOKEN),
       userName: localStorage.getItem(this.STORAGE_KEYS.USER_NAME),
       userEmail: localStorage.getItem(this.STORAGE_KEYS.USER_EMAIL),
-      userAvatar: localStorage.getItem(this.STORAGE_KEYS.USER_AVATAR_URL)
+      userAvatarKey:
+        localStorage.getItem(this.STORAGE_KEYS.USER_AVATAR_KEY) ||
+        localStorage.getItem(this.STORAGE_KEYS.USER_AVATAR_URL)
     };
   }
 }
