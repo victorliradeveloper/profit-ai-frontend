@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../../services/auth/auth.service';
 import { ProfileSessionService } from '../../../../services/profile/profile-session.service';
@@ -11,28 +11,31 @@ import { ApiErrorService } from '../../../../services/http/api-error.service';
 @Component({
   selector: 'app-profile-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './profile-form.component.html'
 })
 export class ProfileFormComponent implements OnInit, OnDestroy {
   userName: string | null = null;
   userEmail: string | null = null;
 
-  editedName: string = '';
-  editedEmail: string = '';
-
   isEditing: boolean = false;
   isLoading: boolean = false;
+  submitAttempted: boolean = false;
 
-  private readonly EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   private readonly MIN_NAME_LENGTH = 2;
+
+  readonly form = this.fb.group({
+    name: ['', [Validators.required, Validators.minLength(this.MIN_NAME_LENGTH)]],
+    email: ['', [Validators.required, Validators.email]]
+  });
 
   constructor(
     private authService: AuthService,
     private profileSession: ProfileSessionService,
     public profileState: ProfileStateService,
     private logger: LoggerService,
-    private apiError: ApiErrorService
+    private apiError: ApiErrorService,
+    private fb: FormBuilder
   ) {}
 
   ngOnInit(): void {
@@ -46,36 +49,40 @@ export class ProfileFormComponent implements OnInit, OnDestroy {
   private loadUserData(): void {
     this.userName = this.authService.getUserName();
     this.userEmail = this.authService.getUserEmail();
-    this.resetEditedFields();
+    this.resetFormFields();
   }
 
-  private resetEditedFields(): void {
-    this.editedName = this.userName || '';
-    this.editedEmail = this.userEmail || '';
+  private resetFormFields(): void {
+    this.form.reset(
+      {
+        name: this.userName || '',
+        email: this.userEmail || ''
+      },
+      { emitEvent: false }
+    );
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
+    this.submitAttempted = false;
   }
 
   startEditing(): void {
     this.isEditing = true;
-    this.resetEditedFields();
+    this.resetFormFields();
     this.profileState.clear();
   }
 
   cancelEditing(): void {
     this.isEditing = false;
-    this.resetEditedFields();
+    this.resetFormFields();
     this.profileState.clear();
   }
 
   saveProfile(): void {
-    const nameError = this.validateName(this.editedName);
-    if (nameError) {
-      this.profileState.setError(nameError);
-      return;
-    }
-
-    const emailError = this.validateEmail(this.editedEmail);
-    if (emailError) {
-      this.profileState.setError(emailError);
+    this.submitAttempted = true;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      const msg = this.validationMessage();
+      this.profileState.setError(msg);
       return;
     }
 
@@ -87,9 +94,10 @@ export class ProfileFormComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.profileState.clear();
 
+    const value = this.form.getRawValue();
     const profileData = {
-      name: this.editedName.trim(),
-      email: this.editedEmail.trim()
+      name: value.name!.trim(),
+      email: value.email!.trim()
     };
 
     this.authService.updateProfile(profileData).pipe(
@@ -101,6 +109,7 @@ export class ProfileFormComponent implements OnInit, OnDestroy {
         this.userName = response?.name || profileData.name;
         this.userEmail = response?.email || profileData.email;
         this.isEditing = false;
+        this.resetFormFields();
         this.profileState.setSuccess('Perfil atualizado com sucesso!');
       },
       error: (error: any) => {
@@ -113,32 +122,27 @@ export class ProfileFormComponent implements OnInit, OnDestroy {
     this.profileSession.logoutToLogin();
   }
 
-  private validateName(name: string): string | null {
-    const trimmedName = name.trim();
-    if (!trimmedName) {
-      return 'O nome é obrigatório';
-    }
-    if (trimmedName.length < this.MIN_NAME_LENGTH) {
-      return `O nome deve ter pelo menos ${this.MIN_NAME_LENGTH} caracteres`;
-    }
-    return null;
-  }
-
-  private validateEmail(email: string): string | null {
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      return 'O email é obrigatório';
-    }
-    if (!this.EMAIL_REGEX.test(trimmedEmail)) {
-      return 'Por favor, insira um email válido';
-    }
-    return null;
-  }
-
   private hasChanges(): boolean {
-    const nameChanged = this.editedName.trim() !== (this.userName || '');
-    const emailChanged = this.editedEmail.trim() !== (this.userEmail || '');
+    const value = this.form.getRawValue();
+    const nameChanged = (value.name || '').trim() !== (this.userName || '');
+    const emailChanged = (value.email || '').trim() !== (this.userEmail || '');
     return nameChanged || emailChanged;
+  }
+
+  get nameControl() {
+    return this.form.controls.name;
+  }
+
+  get emailControl() {
+    return this.form.controls.email;
+  }
+
+  private validationMessage(): string {
+    if (this.nameControl.errors?.['required']) return 'O nome é obrigatório';
+    if (this.nameControl.errors?.['minlength']) return `O nome deve ter pelo menos ${this.MIN_NAME_LENGTH} caracteres`;
+    if (this.emailControl.errors?.['required']) return 'O email é obrigatório';
+    if (this.emailControl.errors?.['email']) return 'Por favor, insira um email válido';
+    return 'Dados inválidos. Verifique as informações.';
   }
 
   private handleUpdateError(error: any): void {
