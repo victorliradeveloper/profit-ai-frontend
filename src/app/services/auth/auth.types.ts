@@ -28,10 +28,3 @@ export interface ChangePasswordRequest {
 export interface ChangePasswordResponse {
   message?: string;
 }
-
-export interface UpdateProfileImageResponse {
-  avatarUrl?: string;
-  imageUrl?: string;
-  photoUrl?: string;
-  message?: string;
-}
