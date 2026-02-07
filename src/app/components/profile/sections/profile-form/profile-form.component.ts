@@ -3,9 +3,9 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../../services/auth/auth.service';
-import { getServerMessage } from '../../shared/profile-http.utils';
-import { ProfileSessionService } from '../../shared/profile-session.service';
-import { ProfileStateService } from '../../shared/profile-state.service';
+import { getServerMessage } from '../../../../services/profile/profile-http.utils';
+import { ProfileSessionService } from '../../../../services/profile/profile-session.service';
+import { ProfileStateService } from '../../../../services/profile/profile-state.service';
 import { LoggerService } from '../../../../services/logger/logger.service';
 
 @Component({

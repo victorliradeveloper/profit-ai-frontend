@@ -5,8 +5,8 @@ import { finalize } from 'rxjs';
 import { ICONS } from '../../../../constants/icons';
 import { AuthService } from '../../../../services/auth/auth.service';
 import { LoggerService } from '../../../../services/logger/logger.service';
-import { getServerMessage } from '../../shared/profile-http.utils';
-import { ProfileSessionService } from '../../shared/profile-session.service';
+import { getServerMessage } from '../../../../services/profile/profile-http.utils';
+import { ProfileSessionService } from '../../../../services/profile/profile-session.service';
 
 @Component({
   selector: 'app-change-password-section',

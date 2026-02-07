@@ -5,7 +5,7 @@ import { AuthService } from '../../services/auth/auth.service';
 import { ChangePasswordSectionComponent } from './sections/change-password/change-password-section.component';
 import { ProfileFormComponent } from './sections/profile-form/profile-form.component';
 import { ProfileImageSectionComponent } from './sections/profile-image/profile-image-section.component';
-import { ProfileStateService } from './shared/profile-state.service';
+import { ProfileStateService } from '../../services/profile/profile-state.service';
 
 @Component({
   selector: 'app-profile',
