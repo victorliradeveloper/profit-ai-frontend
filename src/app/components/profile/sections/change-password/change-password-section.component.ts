@@ -5,8 +5,8 @@ import { finalize } from 'rxjs';
 import { ICONS } from '../../../../constants/icons';
 import { AuthService } from '../../../../services/auth/auth.service';
 import { LoggerService } from '../../../../services/logger/logger.service';
-import { getServerMessage } from '../../../../services/profile/profile-http.utils';
 import { ProfileSessionService } from '../../../../services/profile/profile-session.service';
+import { ApiErrorService } from '../../../../services/http/api-error.service';
 
 @Component({
   selector: 'app-change-password-section',
@@ -44,7 +44,8 @@ export class ChangePasswordSectionComponent implements OnDestroy {
   constructor(
     private authService: AuthService,
     private profileSession: ProfileSessionService,
-    private logger: LoggerService
+    private logger: LoggerService,
+    private apiError: ApiErrorService
   ) {}
 
   ngOnDestroy(): void {
@@ -263,18 +264,9 @@ export class ChangePasswordSectionComponent implements OnDestroy {
       return;
     }
 
-    if (error?.status === 400) {
-      const serverMessage = getServerMessage(error);
-      this.showPasswordErrorMessage(serverMessage || 'Dados inválidos. Verifique as informações.');
-      return;
-    }
-
-    if (error?.status === 0 || error?.status >= 500) {
-      this.showPasswordErrorMessage('Erro no servidor. Tente novamente mais tarde.');
-      return;
-    }
-
-    this.showPasswordErrorMessage('Erro ao alterar senha. Tente novamente.');
+    this.showPasswordErrorMessage(this.apiError.message(error, {
+      fallback: 'Erro ao alterar senha. Tente novamente.'
+    }));
     this.logger.error('Change password error:', error);
   }
 }

@@ -3,10 +3,10 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../../services/auth/auth.service';
-import { getServerMessage } from '../../../../services/profile/profile-http.utils';
 import { ProfileSessionService } from '../../../../services/profile/profile-session.service';
 import { ProfileStateService } from '../../../../services/profile/profile-state.service';
 import { LoggerService } from '../../../../services/logger/logger.service';
+import { ApiErrorService } from '../../../../services/http/api-error.service';
 
 @Component({
   selector: 'app-profile-form',
@@ -31,7 +31,8 @@ export class ProfileFormComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private profileSession: ProfileSessionService,
     public profileState: ProfileStateService,
-    private logger: LoggerService
+    private logger: LoggerService,
+    private apiError: ApiErrorService
   ) {}
 
   ngOnInit(): void {
@@ -141,29 +142,16 @@ export class ProfileFormComponent implements OnInit, OnDestroy {
   }
 
   private handleUpdateError(error: any): void {
-    if (error?.status === 401 || error?.status === 403) {
+    if (this.apiError.isUnauthorized(error)) {
       this.profileState.setError('Sessão expirada. Por favor, faça login novamente.');
       this.profileSession.scheduleLogoutToLogin();
       return;
     }
 
-    if (error?.status === 400) {
-      const serverMessage = getServerMessage(error);
-      this.profileState.setError(serverMessage || 'Dados inválidos. Verifique as informações.');
-      return;
-    }
-
-    if (error?.status === 409) {
-      this.profileState.setError('Este email já está em uso. Por favor, escolha outro.');
-      return;
-    }
-
-    if (error?.status === 0 || error?.status >= 500) {
-      this.profileState.setError('Erro no servidor. Tente novamente mais tarde.');
-      return;
-    }
-
-    this.profileState.setError('Erro ao atualizar perfil. Tente novamente.');
+    this.profileState.setError(this.apiError.message(error, {
+      conflict: 'Este email já está em uso. Por favor, escolha outro.',
+      fallback: 'Erro ao atualizar perfil. Tente novamente.'
+    }));
     this.logger.error('Update profile error:', error);
   }
 }

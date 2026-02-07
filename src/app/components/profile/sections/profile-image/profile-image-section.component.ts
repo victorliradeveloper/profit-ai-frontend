@@ -4,6 +4,7 @@ import { finalize } from 'rxjs';
 import { AuthService } from '../../../../services/auth/auth.service';
 import { FileTransferService } from '../../../../services/files/file-transfer.service';
 import { LoggerService } from '../../../../services/logger/logger.service';
+import { ApiErrorService } from '../../../../services/http/api-error.service';
 
 @Component({
   selector: 'app-profile-image-section',
@@ -32,6 +33,7 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private fileTransfer: FileTransferService,
     private logger: LoggerService,
+    private apiError: ApiErrorService,
   ) {}
 
   ngOnInit(): void {
@@ -146,17 +148,9 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
         this.showProfileImageSuccessMessage('Foto de perfil atualizada!');
       },
       error: (error: any) => {
-        const msg =
-          typeof error?.error === 'string'
-            ? error.error
-            : (error?.error?.message || error?.error?.error);
-
-        if (error?.status === 0 || error?.status >= 500) {
-          this.showProfileImageErrorMessage('Erro no servidor. Tente novamente mais tarde.');
-          return;
-        }
-
-        this.showProfileImageErrorMessage(msg || 'Erro ao enviar foto. Tente novamente.');
+        this.showProfileImageErrorMessage(this.apiError.message(error, {
+          fallback: 'Erro ao enviar foto. Tente novamente.'
+        }));
         this.logger.error('Upload profile image error:', error);
       }
     });

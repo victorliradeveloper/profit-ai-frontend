@@ -38,7 +38,7 @@
   <div class="flex-1 flex items-center justify-center px-4 py-10 lg:px-10">
     <div class="bg-white w-full max-w-lg rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.08)] border border-slate-100 p-8 md:p-10">
       <!-- Email/Password Login -->
-      <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="space-y-6">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
         <div class="space-y-2 text-center">
           <h2 class="text-2xl font-semibold text-slate-900">Entre na sua conta</h2>
           <p class="text-sm text-slate-500">Use seu email e senha para acessar o painel financeiro.</p>
@@ -50,9 +50,7 @@
             <input
               type="email"
               id="email"
-              name="email"
-              [(ngModel)]="loginData.email"
-              required
+              formControlName="email"
               placeholder="seu@email.com"
               class="w-full py-3 px-4 border border-slate-200 rounded-lg text-base transition-all duration-200 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20"
             >
@@ -64,9 +62,7 @@
               <input
                 [type]="showPassword ? 'text' : 'password'"
                 id="password"
-                name="password"
-                [(ngModel)]="loginData.password"
-                required
+                formControlName="password"
                 placeholder="Digite sua senha"
                 class="w-full py-3 pr-12 px-4 border border-slate-200 rounded-lg text-base transition-all duration-200 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20"
               >
@@ -95,7 +91,7 @@
           {{ errorMessage }}
         </div>
 
-        <button type="submit" class="w-full py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white border-none rounded-lg text-base font-semibold cursor-pointer transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(16,185,129,0.35)] disabled:opacity-60 disabled:cursor-not-allowed" [disabled]="!loginForm.form.valid || isLoading">
+        <button type="submit" class="w-full py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white border-none rounded-lg text-base font-semibold cursor-pointer transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(16,185,129,0.35)] disabled:opacity-60 disabled:cursor-not-allowed" [disabled]="form.invalid || isLoading">
           <span *ngIf="!isLoading">Entrar</span>
           <span *ngIf="isLoading">Entrando...</span>
         </button>
