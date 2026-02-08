@@ -8,6 +8,12 @@ export interface LoginResponse {
   token: string;
 }
 
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  name: string;
+}
+
 export interface UpdateProfileRequest {
   name?: string;
   email?: string;

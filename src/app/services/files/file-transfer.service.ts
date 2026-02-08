@@ -1,7 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { apiUrl } from '../http/api-url';
+import { API_PATHS } from '../http/api-paths';
 
 export type UploadS3Response = {
   key: string;
@@ -20,7 +21,7 @@ export class FileTransferService {
     formData.append('file', file);
 
     return this.http.post<UploadS3Response>(
-      `${environment.apiBaseUrl}/v1/s3/upload`,
+      apiUrl(API_PATHS.s3.upload),
       formData,
       {}
     );
@@ -28,8 +29,8 @@ export class FileTransferService {
 
   downloadByKey(key: string): Observable<Blob> {
     return this.http.get(
-      `${environment.apiBaseUrl}/v1/s3/download/${encodeURIComponent(key)}`,
-      { responseType: 'blob' }
+      apiUrl(API_PATHS.s3.downloadByKey(key)),
+      { responseType: 'blob' as const }
     );
   }
 }

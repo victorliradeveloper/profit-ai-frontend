@@ -1,12 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../../services/auth/auth.service';
 import { ProfileSessionService } from '../../../../services/profile/profile-session.service';
 import { ProfileStateService } from '../../../../services/profile/profile-state.service';
 import { LoggerService } from '../../../../services/logger/logger.service';
 import { ApiErrorService } from '../../../../services/http/api-error.service';
+import { UpdateProfileResponse } from '../../../../services/auth/auth.types';
 
 @Component({
   selector: 'app-profile-form',
@@ -105,14 +107,14 @@ export class ProfileFormComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       })
     ).subscribe({
-      next: (response: any) => {
-        this.userName = response?.name || profileData.name;
-        this.userEmail = response?.email || profileData.email;
+      next: (response: UpdateProfileResponse) => {
+        this.userName = response.name || profileData.name;
+        this.userEmail = response.email || profileData.email;
         this.isEditing = false;
         this.resetFormFields();
         this.profileState.setSuccess('Perfil atualizado com sucesso!');
       },
-      error: (error: any) => {
+      error: (error: HttpErrorResponse) => {
         this.handleUpdateError(error);
       }
     });
@@ -145,7 +147,7 @@ export class ProfileFormComponent implements OnInit, OnDestroy {
     return 'Dados inválidos. Verifique as informações.';
   }
 
-  private handleUpdateError(error: any): void {
+  private handleUpdateError(error: HttpErrorResponse): void {
     if (this.apiError.isUnauthorized(error)) {
       this.profileState.setError('Sessão expirada. Por favor, faça login novamente.');
       this.profileSession.scheduleLogoutToLogin();
