@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { SessionStorageService } from '../storage/session-storage.service';
+import { AUTH_STORAGE_KEYS } from './auth.storage';
 
 export type AuthSession = {
   token: string | null;
@@ -12,16 +14,13 @@ export type AuthSession = {
   providedIn: 'root'
 })
 export class AuthStateService {
-  private readonly STORAGE_KEYS = {
-    TOKEN: 'token',
-    USER_NAME: 'userName',
-    USER_EMAIL: 'userEmail',
-    USER_AVATAR_KEY: 'userAvatarKey',
-    USER_AVATAR_URL: 'userAvatarUrl'
-  } as const;
+  private readonly sessionSubject: BehaviorSubject<AuthSession>;
+  readonly session$;
 
-  private readonly sessionSubject = new BehaviorSubject<AuthSession>(this.readFromStorage());
-  readonly session$ = this.sessionSubject.asObservable();
+  constructor(private storage: SessionStorageService) {
+    this.sessionSubject = new BehaviorSubject<AuthSession>(this.readFromStorage());
+    this.session$ = this.sessionSubject.asObservable();
+  }
 
   get snapshot(): AuthSession {
     return this.sessionSubject.value;
@@ -42,12 +41,11 @@ export class AuthStateService {
 
   private readFromStorage(): AuthSession {
     return {
-      token: localStorage.getItem(this.STORAGE_KEYS.TOKEN),
-      userName: localStorage.getItem(this.STORAGE_KEYS.USER_NAME),
-      userEmail: localStorage.getItem(this.STORAGE_KEYS.USER_EMAIL),
+      token: this.storage.get(AUTH_STORAGE_KEYS.TOKEN),
+      userName: this.storage.get(AUTH_STORAGE_KEYS.USER_NAME),
+      userEmail: this.storage.get(AUTH_STORAGE_KEYS.USER_EMAIL),
       userAvatarKey:
-        localStorage.getItem(this.STORAGE_KEYS.USER_AVATAR_KEY) ||
-        localStorage.getItem(this.STORAGE_KEYS.USER_AVATAR_URL)
+        this.storage.get(AUTH_STORAGE_KEYS.USER_AVATAR_KEY) || this.storage.get(AUTH_STORAGE_KEYS.USER_AVATAR_URL)
     };
   }
 }
