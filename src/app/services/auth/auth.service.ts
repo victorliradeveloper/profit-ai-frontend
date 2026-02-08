@@ -3,18 +3,17 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { LoginRequest, LoginResponse, RegisterRequest, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse, AuthProfileResponse } from './auth.types';
-import { environment } from '../../../environments/environment';
 import { LoggerService } from '../logger/logger.service';
 import { AuthStateService } from './auth-state.service';
 import { SessionStorageService } from '../storage/session-storage.service';
 import { AUTH_STORAGE_KEYS, AUTH_STORAGE_KEY_LIST } from './auth.storage';
+import { apiUrl } from '../http/api-url';
+import { API_PATHS } from '../http/api-paths';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly apiUrl = `${environment.apiBaseUrl}/v1/auth`;
-
   constructor(
     private http: HttpClient,
     private logger: LoggerService,
@@ -39,7 +38,7 @@ export class AuthService {
 
   login(credentials: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(
-      `${this.apiUrl}/login`, 
+      apiUrl(API_PATHS.auth.login),
       credentials
     ).pipe(
       tap(response => {
@@ -54,7 +53,7 @@ export class AuthService {
 
   register(userData: RegisterRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(
-      `${this.apiUrl}/register`, 
+      apiUrl(API_PATHS.auth.register),
       userData
     ).pipe(
       tap(response => {
@@ -117,7 +116,7 @@ export class AuthService {
     }
 
     return this.http.put<UpdateProfileResponse>(
-      `${this.apiUrl}/profile`, 
+      apiUrl(API_PATHS.auth.profile),
       profileData
     ).pipe(
       tap(response => {
@@ -151,7 +150,7 @@ export class AuthService {
     }
 
     return this.http.get<AuthProfileResponse>(
-      `${this.apiUrl}/profile`
+      apiUrl(API_PATHS.auth.profile)
     ).pipe(
       tap(profile => {
         this.storage.set(AUTH_STORAGE_KEYS.USER_NAME, profile.name);
@@ -173,7 +172,7 @@ export class AuthService {
     }
 
     return this.http.put<AuthProfileResponse>(
-      `${this.apiUrl}/profile/avatar`,
+      apiUrl(API_PATHS.auth.avatar),
       { avatarKey }
     ).pipe(
       tap(profile => {
@@ -194,7 +193,7 @@ export class AuthService {
     }
 
     return this.http.put<ChangePasswordResponse>(
-      `${this.apiUrl}/password`,
+      apiUrl(API_PATHS.auth.password),
       passwordData
     ).pipe(
       catchError(this.handleHttpError('Change password'))
