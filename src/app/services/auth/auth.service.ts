@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { LoginRequest, LoginResponse, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse, AuthProfileResponse } from './auth.types';
 import { environment } from '../../../environments/environment';
@@ -32,20 +32,6 @@ export class AuthService {
     };
   }
 
-  private getAuthHeaders(): HttpHeaders {
-    const token = this.getToken();
-    return new HttpHeaders({
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
-    });
-  }
-
-  private getDefaultHeaders(): HttpHeaders {
-    return new HttpHeaders({
-      'Content-Type': 'application/json'
-    });
-  }
-
   private saveUserData(name: string, email: string, token?: string): void {
     if (token) {
       localStorage.setItem(this.STORAGE_KEYS.TOKEN, token);
@@ -57,8 +43,7 @@ export class AuthService {
   login(credentials: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(
       `${this.apiUrl}/login`, 
-      credentials, 
-      { headers: this.getDefaultHeaders() }
+      credentials
     ).pipe(
       tap(response => {
         if (response.token && response.name) {
@@ -73,8 +58,7 @@ export class AuthService {
   register(userData: { email: string; password: string; name: string }): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(
       `${this.apiUrl}/register`, 
-      userData, 
-      { headers: this.getDefaultHeaders() }
+      userData
     ).pipe(
       tap(response => {
         if (response.token && response.name) {
@@ -139,8 +123,7 @@ export class AuthService {
 
     return this.http.put<UpdateProfileResponse>(
       `${this.apiUrl}/profile`, 
-      profileData, 
-      { headers: this.getAuthHeaders() }
+      profileData
     ).pipe(
       tap(response => {
         const updatedData = response || profileData;
@@ -173,8 +156,7 @@ export class AuthService {
     }
 
     return this.http.get<AuthProfileResponse>(
-      `${this.apiUrl}/profile`,
-      { headers: this.getAuthHeaders() }
+      `${this.apiUrl}/profile`
     ).pipe(
       tap(profile => {
         localStorage.setItem(this.STORAGE_KEYS.USER_NAME, profile.name);
@@ -197,8 +179,7 @@ export class AuthService {
 
     return this.http.put<AuthProfileResponse>(
       `${this.apiUrl}/profile/avatar`,
-      { avatarKey },
-      { headers: this.getAuthHeaders() }
+      { avatarKey }
     ).pipe(
       tap(profile => {
         if (profile.avatarKey) {
@@ -219,8 +200,7 @@ export class AuthService {
 
     return this.http.put<ChangePasswordResponse>(
       `${this.apiUrl}/password`,
-      passwordData,
-      { headers: this.getAuthHeaders() }
+      passwordData
     ).pipe(
       catchError(this.handleHttpError('Change password'))
     );
