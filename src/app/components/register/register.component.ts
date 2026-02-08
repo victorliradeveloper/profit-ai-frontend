@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../services/auth/auth.service';
 import { ICONS } from '../../constants/icons';
 import { LoggerService } from '../../services/logger/logger.service';
@@ -88,7 +89,7 @@ export class RegisterComponent {
           this.router.navigate(['/profile']);
         }, 1000);
       },
-      error: (error: any) => {
+      error: (error: HttpErrorResponse) => {
         this.isLoading = false;
         this.logger.error('Register error:', error);
 

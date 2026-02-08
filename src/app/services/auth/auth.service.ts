@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, catchError, throwError } from 'rxjs';
-import { LoginRequest, LoginResponse, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse, AuthProfileResponse } from './auth.types';
+import { HttpErrorResponse } from '@angular/common/http';
+import { LoginRequest, LoginResponse, RegisterRequest, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse, AuthProfileResponse } from './auth.types';
 import { environment } from '../../../environments/environment';
 import { LoggerService } from '../logger/logger.service';
 import { AuthStateService } from './auth-state.service';
@@ -26,7 +27,7 @@ export class AuthService {
   ) {}
 
   private handleHttpError(operation: string) {
-    return (error: unknown) => {
+    return (error: HttpErrorResponse) => {
       this.logger.error(`${operation} error in service:`, error);
       return throwError(() => error);
     };
@@ -55,7 +56,7 @@ export class AuthService {
     );
   }
 
-  register(userData: { email: string; password: string; name: string }): Observable<LoginResponse> {
+  register(userData: RegisterRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(
       `${this.apiUrl}/register`, 
       userData

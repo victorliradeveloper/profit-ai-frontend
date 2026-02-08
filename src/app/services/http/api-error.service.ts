@@ -1,39 +1,52 @@
 import { Injectable } from '@angular/core';
-
-export type ApiErrorMessageOverrides = {
-  badRequest?: string;
-  unauthorized?: string;
-  forbidden?: string;
-  notFound?: string;
-  conflict?: string;
-  serverError?: string;
-  networkError?: string;
-  fallback?: string;
-};
+import { HttpErrorResponse } from '@angular/common/http';
+import { ApiErrorMessageOverrides } from './api-error.types';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiErrorService {
-  isUnauthorized(error: any): boolean {
-    return error?.status === 401 || error?.status === 403;
+  private isHttpLikeError(error: unknown): error is { status?: unknown; error?: unknown } {
+    return typeof error === 'object' && error !== null && 'status' in error;
   }
 
-  getServerMessage(error: any): string | null {
-    const err = error?.error;
-    if (!err) return null;
+  isUnauthorized(error: unknown): boolean {
+    if (error instanceof HttpErrorResponse) return error.status === 401 || error.status === 403;
+    if (!this.isHttpLikeError(error)) return false;
+    const status = (error as { status?: unknown }).status;
+    return status === 401 || status === 403;
+  }
 
-    if (typeof err === 'string') {
-      const trimmed = err.trim();
+  getServerMessage(error: unknown): string | null {
+    const errBody =
+      error instanceof HttpErrorResponse
+        ? error.error
+        : this.isHttpLikeError(error)
+          ? (error as { error?: unknown }).error
+          : null;
+
+    if (!errBody) return null;
+
+    if (typeof errBody === 'string') {
+      const trimmed = errBody.trim();
       return trimmed ? trimmed : null;
     }
 
-    const msg = err?.message || err?.error;
+    const msg =
+      typeof errBody === 'object' && errBody !== null
+        ? ((errBody as { message?: unknown; error?: unknown }).message ??
+            (errBody as { message?: unknown; error?: unknown }).error)
+        : null;
     return typeof msg === 'string' && msg.trim() ? msg.trim() : null;
   }
 
-  message(error: any, overrides: ApiErrorMessageOverrides = {}): string {
-    const status = error?.status;
+  message(error: unknown, overrides: ApiErrorMessageOverrides = {}): string {
+    const status =
+      error instanceof HttpErrorResponse
+        ? error.status
+        : this.isHttpLikeError(error)
+          ? ((error as { status?: unknown }).status as number | undefined)
+          : undefined;
     const serverMessage = this.getServerMessage(error);
 
     if (status === 0) {

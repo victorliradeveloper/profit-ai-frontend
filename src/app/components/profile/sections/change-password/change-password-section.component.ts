@@ -9,6 +9,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { finalize, Subscription } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ICONS } from '../../../../constants/icons';
 import { AuthService } from '../../../../services/auth/auth.service';
 import { LoggerService } from '../../../../services/logger/logger.service';
@@ -227,7 +228,7 @@ export class ChangePasswordSectionComponent implements OnDestroy {
         this.showConfirmPassword = false;
         this.showPasswordSuccessMessage('Senha alterada com sucesso!');
       },
-      error: (error: any) => {
+      error: (error: HttpErrorResponse) => {
         this.handlePasswordChangeError(error);
       }
     });
@@ -261,7 +262,7 @@ export class ChangePasswordSectionComponent implements OnDestroy {
     this.clearPasswordMessageTimeout();
   }
 
-  private handlePasswordChangeError(error: any): void {
+  private handlePasswordChangeError(error: HttpErrorResponse): void {
     if (error?.status === 401) {
       this.showPasswordErrorMessage('Senha atual incorreta.');
       return;

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { finalize, switchMap } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../../services/auth/auth.service';
 import { FileTransferService } from '../../../../services/files/file-transfer.service';
 import { LoggerService } from '../../../../services/logger/logger.service';
@@ -151,7 +152,7 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
         this.revokeProfileImagePreviewObjectUrl();
         this.showProfileImageSuccessMessage('Foto de perfil atualizada!');
       },
-      error: (error: any) => {
+      error: (error: HttpErrorResponse) => {
         this.showProfileImageErrorMessage(this.apiError.message(error, {
           fallback: 'Erro ao enviar foto. Tente novamente.'
         }));

@@ -29,7 +29,7 @@ export class FileTransferService {
   downloadByKey(key: string): Observable<Blob> {
     return this.http.get(
       `${environment.apiBaseUrl}/v1/s3/download/${encodeURIComponent(key)}`,
-      { responseType: 'blob' }
+      { responseType: 'blob' as const }
     );
   }
 }
