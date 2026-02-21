@@ -1,4 +1,4 @@
-<div class="space-y-6" [formGroup]="form">
+<div class="space-y-6 max-w-[60%]" [formGroup]="form">
   <div class="border-b border-gray-200 pb-4">
     <label
       for="user-name"
@@ -75,14 +75,6 @@
         <span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
         Salvando...
       </span>
-    </button>
-
-    <button
-      (click)="logout()"
-      type="button"
-      class="flex-1 py-3 bg-gradient-to-br from-red-500 to-pink-600 text-[#ffffffb3] border-none rounded-lg text-base font-semibold cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_5px_15px_rgba(239,68,68,0.4)] focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-      aria-label="Sair da conta">
-      Sair
     </button>
   </div>
 </div>

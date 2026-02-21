@@ -13,8 +13,14 @@ import { ProfileStateService } from '../../services/profile/profile-state.servic
   templateUrl: './profile.component.html'
 })
 export class ProfileComponent {
+  activeTab: 'perfil' | 'senha' | 'assinatura' = 'perfil';
+
   constructor(
     public profileState: ProfileStateService
   ) {}
+
+  setTab(tab: 'perfil' | 'senha' | 'assinatura'): void {
+    this.activeTab = tab;
+  }
 }
 
