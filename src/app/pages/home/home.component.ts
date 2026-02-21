@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
-import { DashboardComponent } from '../dashboard/dashboard.component';
+import { DashboardComponent } from '../../components/dashboard/dashboard.component';
 import { filter } from 'rxjs/operators';
 
 @Component({
@@ -34,3 +34,4 @@ export class HomeComponent implements OnInit {
     this.isAuthenticated = this.authService.isAuthenticated();
   }
 }
+

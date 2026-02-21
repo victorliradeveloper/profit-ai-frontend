@@ -119,3 +119,4 @@ export class RegisterComponent {
     // Aqui você implementaria a lógica de cadastro com Google
   }
 }
+
