@@ -26,7 +26,7 @@
         </button>
       </div>
 
-      <mat-menu #newMenu="matMenu" xPosition="after" class="w-[400px] rounded-[100px]">
+      <mat-menu #newMenu="matMenu" xPosition="after" class="w-[400px] rounded-[100px] !bg-[#2c2c2e]">
         <button
           mat-menu-item
           [routerLink]="['/planejamento']"
@@ -34,7 +34,7 @@
           (click)="onNavItemClick()"
         >
           <mat-icon class="!text-red-500">trending_down</mat-icon>
-          <span>Despesa</span>
+          <span class="text-[#ffffffb3]">Despesa</span>
         </button>
         <button
           mat-menu-item
@@ -43,7 +43,7 @@
           (click)="onNavItemClick()"
         >
           <mat-icon class="!text-[#10b780]">trending_up</mat-icon>
-          <span>Receita</span>
+          <span class="text-[#ffffffb3]">Receita</span>
         </button>
         <button
           mat-menu-item
@@ -52,7 +52,7 @@
           (click)="onNavItemClick()"
         >
           <mat-icon class="!text-[#42a5f5]">repeat</mat-icon>
-          <span>Transferência</span>
+          <span class="text-[#ffffffb3]">Transferência</span>
         </button>
       </mat-menu>
 

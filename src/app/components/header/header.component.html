@@ -54,18 +54,18 @@
           <mat-icon class="text-white/90 text-[20px] leading-[20px]">expand_more</mat-icon>
         </button>
 
-        <mat-menu #userMenu="matMenu" xPosition="before" class="w-[300px]">
+        <mat-menu #userMenu="matMenu" xPosition="before" class="w-[300px] !bg-[#2c2c2e]">
           <button mat-menu-item (click)="goToProfile()">
-            <mat-icon>person</mat-icon>
-            <span>Meu perfil</span>
+            <mat-icon class="!text-[#ffffffb3]">person</mat-icon>
+            <span class="text-[#ffffffb3]">Meu perfil</span>
           </button>
           <button mat-menu-item (click)="goToSettings()">
-            <mat-icon>settings</mat-icon>
-            <span>Configurações</span>
+            <mat-icon class="!text-[#ffffffb3]">settings</mat-icon>
+            <span class="text-[#ffffffb3]">Configurações</span>
           </button>
           <button mat-menu-item (click)="logout()">
-            <mat-icon>logout</mat-icon>
-            <span>Sair</span>
+            <mat-icon class="!text-[#ffffffb3]">logout</mat-icon>
+            <span class="text-[#ffffffb3]">Sair</span>
           </button>
         </mat-menu>
       </ng-container>
