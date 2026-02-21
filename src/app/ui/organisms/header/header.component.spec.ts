@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { HeaderComponent } from './header.component';
-import { AuthService } from '../../services/auth/auth.service';
-import { AuthStateService } from '../../services/auth/auth-state.service';
+import { AuthService } from '../../../services/auth/auth.service';
+import { AuthStateService } from '../../../services/auth/auth-state.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of } from 'rxjs';

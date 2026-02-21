@@ -3,19 +3,27 @@ import { Component, OnDestroy, OnInit } from "@angular/core";
 import { Router, RouterModule } from "@angular/router";
 import { Subject, of } from "rxjs";
 import { catchError, distinctUntilChanged, map, switchMap, takeUntil, tap } from "rxjs/operators";
-import { AuthService } from "../../services/auth/auth.service";
-import { AuthStateService } from "../../services/auth/auth-state.service";
-import { FileTransferService } from "../../services/files/file-transfer.service";
-import { MatMenuModule } from "@angular/material/menu";
-import { MatIconModule } from "@angular/material/icon";
-import { MatButtonModule } from "@angular/material/button";
-import { SidebarService } from "../../services/layout/sidebar.service";
+import { AuthService } from "../../../services/auth/auth.service";
+import { AuthStateService } from "../../../services/auth/auth-state.service";
+import { FileTransferService } from "../../../services/files/file-transfer.service";
+import { SidebarService } from "../../../services/layout/sidebar.service";
+import { IconButtonComponent } from "../../atoms/icon-button/icon-button.component";
+import { AppLogoComponent } from "../../molecules/app-logo/app-logo.component";
+import { HeaderAuthLinksComponent } from "../../molecules/header-auth-links/header-auth-links.component";
+import { HeaderUserMenuComponent } from "../../molecules/header-user-menu/header-user-menu.component";
 
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
   standalone: true,
-  imports: [RouterModule, CommonModule, MatMenuModule, MatIconModule, MatButtonModule]
+  imports: [
+    RouterModule,
+    CommonModule,
+    IconButtonComponent,
+    AppLogoComponent,
+    HeaderAuthLinksComponent,
+    HeaderUserMenuComponent,
+  ]
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   isAuthenticated: boolean = false;
@@ -97,3 +105,4 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.router.navigate(['/login']);
   }
 }
+

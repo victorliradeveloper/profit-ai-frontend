@@ -1,0 +1,10 @@
+<button
+  type="button"
+  mat-icon-button
+  (click)="pressed.emit()"
+  [class]="buttonClass"
+  [attr.aria-label]="ariaLabel"
+>
+  <mat-icon [class]="iconClass">{{ icon }}</mat-icon>
+</button>
+

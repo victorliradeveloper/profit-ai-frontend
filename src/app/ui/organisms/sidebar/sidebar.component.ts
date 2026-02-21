@@ -7,8 +7,8 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { AuthStateService } from '../../services/auth/auth-state.service';
-import { SidebarService } from '../../services/layout/sidebar.service';
+import { AuthStateService } from '../../../services/auth/auth-state.service';
+import { SidebarService } from '../../../services/layout/sidebar.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -31,8 +31,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   get fixedTopGapPx(): number {
-    // Header is sticky at top; give the sidenav a gap on desktop so it doesn't sit under it.
-    // On mobile the header can be taller (flex-col), so we don't apply a fixed gap.
     return this.isHandset ? 0 : 80;
   }
 
@@ -50,7 +48,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.isHandset = state.matches;
         this.sidenavMode = this.isHandset ? 'over' : 'side';
 
-        // default behavior per breakpoint
         if (this.isAuthenticated) {
           if (this.isHandset) this.sidebar.close();
           else this.sidebar.open();

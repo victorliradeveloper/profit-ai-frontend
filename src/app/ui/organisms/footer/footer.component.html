@@ -1,0 +1,15 @@
+<footer class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-gray-100 mt-auto shadow-[0_-8px_32px_rgba(0,0,0,0.25)] border-t border-white/10">
+  <div class="max-w-6xl mx-auto px-4 md:px-6">
+    <div class="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_1fr_1fr] gap-10 py-12">
+      <app-footer-company-info></app-footer-company-info>
+
+      <app-footer-links-column title="Plataforma" [links]="platformLinks"></app-footer-links-column>
+      <app-footer-links-column title="Recursos" [links]="resourceLinks"></app-footer-links-column>
+
+      <app-footer-social-links></app-footer-social-links>
+    </div>
+
+    <app-footer-bottom [currentYear]="currentYear"></app-footer-bottom>
+  </div>
+</footer>
+
