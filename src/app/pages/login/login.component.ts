@@ -67,3 +67,4 @@ export class LoginComponent {
     // Aqui você implementaria a lógica de autenticação com Google
   }
 }
+

@@ -153,10 +153,10 @@ export class ChangePasswordSectionComponent implements OnDestroy {
     return this.passwordForm.valid && !this.isChangingPasswordLoading;
   }
 
-  get newPasswordStrength(): { score: number; label: string; barClass: string; textClass: string } {
+  get newPasswordStrength(): { score: number; label: string; barClass: string } {
     const pwd = (this.passwordForm.get('newPassword')?.value as string) || '';
     if (!pwd) {
-      return { score: 0, label: '—', barClass: 'bg-gray-200', textClass: 'text-gray-500' };
+      return { score: 0, label: '—', barClass: 'bg-gray-200' };
     }
 
     const hasLower = /[a-z]/.test(pwd);
@@ -173,10 +173,10 @@ export class ChangePasswordSectionComponent implements OnDestroy {
     if (hasSymbol) score += 1;
     score = Math.min(score, 4);
 
-    if (score <= 1) return { score, label: 'Fraca', barClass: 'bg-red-500', textClass: 'text-red-600' };
-    if (score === 2) return { score, label: 'Média', barClass: 'bg-yellow-500', textClass: 'text-yellow-700' };
-    if (score === 3) return { score, label: 'Boa', barClass: 'bg-green-500', textClass: 'text-green-600' };
-    return { score, label: 'Forte', barClass: 'bg-emerald-600', textClass: 'text-emerald-700' };
+    if (score <= 1) return { score, label: 'Fraca', barClass: 'bg-red-500' };
+    if (score === 2) return { score, label: 'Média', barClass: 'bg-yellow-500' };
+    if (score === 3) return { score, label: 'Boa', barClass: 'bg-green-500' };
+    return { score, label: 'Forte', barClass: 'bg-emerald-600' };
   }
 
   get newPasswordRequirements(): Array<{ label: string; ok: boolean }> {

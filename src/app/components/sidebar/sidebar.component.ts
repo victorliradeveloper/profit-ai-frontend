@@ -6,6 +6,7 @@ import { takeUntil } from 'rxjs/operators';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { AuthStateService } from '../../services/auth/auth-state.service';
 import { SidebarService } from '../../services/layout/sidebar.service';
@@ -19,6 +20,7 @@ import { SidebarService } from '../../services/layout/sidebar.service';
     MatSidenavModule,
     MatListModule,
     MatIconModule,
+    MatMenuModule,
   ],
   templateUrl: './sidebar.component.html',
 })
