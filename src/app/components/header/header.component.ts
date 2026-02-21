@@ -8,12 +8,14 @@ import { AuthStateService } from "../../services/auth/auth-state.service";
 import { FileTransferService } from "../../services/files/file-transfer.service";
 import { MatMenuModule } from "@angular/material/menu";
 import { MatIconModule } from "@angular/material/icon";
+import { MatButtonModule } from "@angular/material/button";
+import { SidebarService } from "../../services/layout/sidebar.service";
 
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
   standalone: true,
-  imports: [RouterModule, CommonModule, MatMenuModule, MatIconModule]
+  imports: [RouterModule, CommonModule, MatMenuModule, MatIconModule, MatButtonModule]
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   isAuthenticated: boolean = false;
@@ -26,7 +28,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private router: Router,
     private authState: AuthStateService,
-    private fileTransfer: FileTransferService
+    private fileTransfer: FileTransferService,
+    private sidebar: SidebarService
   ) {}
 
   ngOnInit() {
@@ -77,12 +80,16 @@ export class HeaderComponent implements OnInit, OnDestroy {
     return (first + last).toUpperCase() || 'U';
   }
 
+  toggleSidebar(): void {
+    this.sidebar.toggle();
+  }
+
   goToProfile(): void {
     this.router.navigate(['/profile']);
   }
 
   goToSettings(): void {
-    this.router.navigate(['/settings']);
+    this.router.navigate(['/configuracoes']);
   }
 
   logout() {
