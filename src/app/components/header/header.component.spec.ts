@@ -74,7 +74,8 @@ describe('HeaderComponent', () => {
     const trigger = screen.getByRole('button', { name: /abrir menu do usuário/i });
     await userEvent.click(trigger);
 
-    expect(await screen.findByRole('menuitem', { name: /perfil/i })).toBeTruthy();
+    expect(await screen.findByRole('menuitem', { name: /meu perfil/i })).toBeTruthy();
+    expect(await screen.findByRole('menuitem', { name: /configurações/i })).toBeTruthy();
     expect(await screen.findByRole('menuitem', { name: /sair/i })).toBeTruthy();
   });
 });

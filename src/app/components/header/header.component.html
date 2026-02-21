@@ -46,7 +46,11 @@
         <mat-menu #userMenu="matMenu" xPosition="before">
           <button mat-menu-item (click)="goToProfile()">
             <mat-icon>person</mat-icon>
-            <span>Perfil</span>
+            <span>Meu perfil</span>
+          </button>
+          <button mat-menu-item (click)="goToSettings()">
+            <mat-icon>settings</mat-icon>
+            <span>Configurações</span>
           </button>
           <button mat-menu-item (click)="logout()">
             <mat-icon>logout</mat-icon>
