@@ -15,6 +15,7 @@ import { ApiErrorService } from '../../../../services/http/api-error.service';
 })
 export class ProfileImageSectionComponent implements OnInit, OnDestroy {
   userName: string | null = null;
+  userEmail: string | null = null;
   userAvatarUrl: string | null = null;
 
   profileImagePreviewUrl: string | null = null;
@@ -39,9 +40,11 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.userName = this.authService.getUserName();
+    this.userEmail = this.authService.getUserEmail();
     this.authService.getProfile().subscribe({
       next: (profile) => {
         this.userName = profile.name;
+        this.userEmail = profile.email;
         this.loadPersistedAvatar();
       },
       error: () => {
@@ -117,6 +120,12 @@ export class ProfileImageSectionComponent implements OnInit, OnDestroy {
     this.revokeProfileImagePreviewObjectUrl();
     this.profileImagePreviewObjectUrl = URL.createObjectURL(file);
     this.profileImagePreviewUrl = this.profileImagePreviewObjectUrl;
+
+    // Allow re-selecting the same file later (otherwise change event may not fire).
+    if (input) input.value = '';
+
+    // Auto-upload on selection.
+    this.uploadProfileImage();
   }
 
   cancelProfileImageSelection(fileInput?: HTMLInputElement): void {
