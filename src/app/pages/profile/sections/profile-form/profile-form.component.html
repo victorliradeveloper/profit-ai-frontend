@@ -1,5 +1,5 @@
 <div class="space-y-6 max-w-[60%]" [formGroup]="form">
-  <div class="border-b border-gray-200 pb-4">
+  <div class="border-b border-gray-200 pb-1">
     <label
       for="user-name"
       class="block text-sm font-medium text-[#ffffffb3] mb-2">
@@ -12,14 +12,14 @@
       type="text"
       formControlName="name"
       autocomplete="name"
-      class="w-full px-4 py-2 border border-gray-300 rounded-lg text-lg text-[#ffffffb3] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-transparent"
+      class="w-full px-4 py-2 rounded-lg text-lg text-[#ffffffb3] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-transparent"
       [class.border-red-500]="isEditing && nameControl.invalid && (nameControl.touched || submitAttempted)"
       placeholder="Digite seu nome"
       aria-label="Nome do usuário"
       aria-required="true">
   </div>
 
-  <div class="border-b border-gray-200 pb-4">
+  <div class="border-b border-gray-200 pb-1">
     <label
       for="user-email"
       class="block text-sm font-medium text-[#ffffffb3] mb-2">
@@ -32,7 +32,7 @@
       type="email"
       formControlName="email"
       autocomplete="email"
-      class="w-full px-4 py-2 border border-gray-300 rounded-lg text-lg text-[#ffffffb3] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-transparent"
+      class="w-full px-4 py-2 rounded-lg text-lg text-[#ffffffb3] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-transparent"
       [class.border-red-500]="isEditing && emailControl.invalid && (emailControl.touched || submitAttempted)"
       placeholder="Digite seu email"
       aria-label="Email do usuário"
