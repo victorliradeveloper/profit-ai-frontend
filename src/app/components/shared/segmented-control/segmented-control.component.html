@@ -1,0 +1,15 @@
+<div class="rounded-full bg-white/5 border border-white/10 p-1 flex items-center justify-between" role="tablist">
+  <button
+    *ngFor="let item of items; trackBy: trackById"
+    type="button"
+    class="flex-1 px-5 py-3 text-sm font-semibold rounded-full transition-colors"
+    [ngClass]="value === item.id ? 'bg-[#10b780] text-white shadow-sm' : 'text-[#ffffffb3] hover:bg-white/10'"
+    [disabled]="item.disabled"
+    [attr.aria-label]="item.ariaLabel || item.label"
+    [attr.aria-pressed]="value === item.id"
+    (click)="select(item)"
+  >
+    {{ item.label }}
+  </button>
+</div>
+
