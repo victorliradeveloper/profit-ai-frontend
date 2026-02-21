@@ -1,4 +1,4 @@
-<mat-sidenav-container class="min-h-screen bg-white">
+<mat-sidenav-container class="min-h-screen !bg-[#1c1c1e]">
   <mat-sidenav
     *ngIf="isAuthenticated"
     [mode]="sidenavMode"
@@ -7,7 +7,7 @@
     [fixedInViewport]="true"
     [fixedTopGap]="fixedTopGapPx"
     [fixedBottomGap]="0"
-    class="bg-neutral-950 text-white"
+    class="bg-neutral-950 text-white !bg-[#2c2c2e]"
     [style.width.px]="sidenavWidthPx"
     [style.minWidth.px]="sidenavWidthPx"
   >
@@ -33,7 +33,7 @@
           [queryParams]="{ novo: 'despesa' }"
           (click)="onNavItemClick()"
         >
-          <mat-icon class="icon-expense">trending_down</mat-icon>
+          <mat-icon class="!text-red-500">trending_down</mat-icon>
           <span>Despesa</span>
         </button>
         <button
@@ -42,7 +42,7 @@
           [queryParams]="{ novo: 'receita' }"
           (click)="onNavItemClick()"
         >
-          <mat-icon class="icon-income">trending_up</mat-icon>
+          <mat-icon class="!text-[#10b780]">trending_up</mat-icon>
           <span>Receita</span>
         </button>
         <button
@@ -51,40 +51,40 @@
           [queryParams]="{ novo: 'transferencia' }"
           (click)="onNavItemClick()"
         >
-          <mat-icon class="icon-transfer">repeat</mat-icon>
+          <mat-icon class="!text-[#42a5f5]">repeat</mat-icon>
           <span>Transferência</span>
         </button>
       </mat-menu>
 
       <mat-nav-list class="flex-1 overflow-auto">
         <a mat-list-item routerLink="/planejamento" routerLinkActive="bg-white/10" class="text-white" style="padding-left: 20px" (click)="onNavItemClick()">
-          <mat-icon matListItemIcon class="text-white/80">home</mat-icon>
-          <span matListItemTitle>Dashboard</span>
+          <mat-icon matListItemIcon class="!text-[#ffffffb3]">home</mat-icon>
+          <span matListItemTitle class="!text-[#ffffffb3]">Dashboard</span>
         </a>
         <a mat-list-item routerLink="/planejamento" routerLinkActive="bg-white/10" class="text-white" style="padding-left: 20px" (click)="onNavItemClick()">
-          <mat-icon matListItemIcon class="text-white/80">event_note</mat-icon>
-          <span matListItemTitle>Planejamento</span>
+          <mat-icon matListItemIcon class="!text-[#ffffffb3]">event_note</mat-icon>
+          <span matListItemTitle class="!text-[#ffffffb3]">Planejamento</span>
         </a>
         <a mat-list-item routerLink="/planejamento" routerLinkActive="bg-white/10" class="text-white" style="padding-left: 20px" (click)="onNavItemClick()">
-          <mat-icon matListItemIcon class="text-white/80">pie_chart</mat-icon>
-          <span matListItemTitle>Relatórios</span>
+          <mat-icon matListItemIcon class="!text-[#ffffffb3]">pie_chart</mat-icon>
+          <span matListItemTitle class="!text-[#ffffffb3]">Relatórios</span>
         </a>
-        <a mat-list-item routerLink="/planejamento" routerLinkActive="bg-white/10" class="text-white" style="padding-left: 20px" (click)="onNavItemClick()">
-          <mat-icon matListItemIcon class="text-white/80">input</mat-icon>
-          <span matListItemTitle>Categorias</span>
+        <a mat-list-item routerLink="/planejamento" routerLinkActive="bg-white/10" class="!text-white/80" style="padding-left: 20px" (click)="onNavItemClick()">
+          <mat-icon matListItemIcon class="!text-[#ffffffb3]">input</mat-icon>
+          <span matListItemTitle class="!text-[#ffffffb3]">Categorias</span>
         </a>
-        <a mat-list-item routerLink="/configuracoes" routerLinkActive="bg-white/10" class="text-white" style="padding-left: 20px" (click)="onNavItemClick()">
-          <mat-icon matListItemIcon class="text-white/80">settings</mat-icon>
-          <span matListItemTitle>Configurações</span>
+        <a mat-list-item routerLink="/configuracoes" routerLinkActive="bg-white/10"  class="!text-white/80" style="padding-left: 20px" (click)="onNavItemClick()">
+          <mat-icon matListItemIcon class="!text-[#ffffffb3]">settings</mat-icon>
+          <span matListItemTitle class="!text-[#ffffffb3]">Configurações</span>
         </a>
       </mat-nav-list>
 
       <div class="px-5 py-4 border-t border-white/10 text-xs text-white/70 flex items-center justify-between">
         <span class="inline-flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-[#10b780]"></span>
-          <span class="font-semibold text-black/80">Profit AI</span>
+          <span class="font-semibold text-whie/80">Profit AI</span>
         </span>
-        <span class="px-2 py-1 rounded-full bg-white/10 text-black/70">v1</span>
+        <span class="px-2 py-1 rounded-full bg-white/10 text-white/70">v1</span>
       </div>
     </div>
   </mat-sidenav>
