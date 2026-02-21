@@ -1,10 +1,12 @@
 import { render, screen } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
 import { HeaderComponent } from './header.component';
 import { AuthService } from '../../services/auth/auth.service';
 import { AuthStateService } from '../../services/auth/auth-state.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of } from 'rxjs';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
 describe('HeaderComponent', () => {
   const mockAuthService = {
@@ -15,7 +17,7 @@ describe('HeaderComponent', () => {
     token: null,
     userName: null,
     userEmail: null,
-    userAvatar: null
+    userAvatarKey: null
   };
 
   beforeEach(() => {
@@ -28,6 +30,7 @@ describe('HeaderComponent', () => {
       providers: [
         { provide: AuthService, useValue: mockAuthService },
         { provide: AuthStateService, useValue: { session$: of(unauthSession) } },
+        provideNoopAnimations(),
       ],
     });
 
@@ -41,6 +44,7 @@ describe('HeaderComponent', () => {
       providers: [
         { provide: AuthService, useValue: mockAuthService },
         { provide: AuthStateService, useValue: { session$: of(unauthSession) } },
+        provideNoopAnimations(),
       ],
     });
 
@@ -53,7 +57,7 @@ describe('HeaderComponent', () => {
       token: 'token',
       userName: 'Test User',
       userEmail: 'test@example.com',
-      userAvatar: null
+      userAvatarKey: null
     };
 
     await render(HeaderComponent, {
@@ -61,11 +65,18 @@ describe('HeaderComponent', () => {
       providers: [
         { provide: AuthService, useValue: mockAuthService },
         { provide: AuthStateService, useValue: { session$: of(authSession) } },
+        provideNoopAnimations(),
       ],
     });
 
-    expect(screen.getByText('Perfil')).toBeTruthy();
-    expect(screen.getByText('Sair')).toBeTruthy();
+    expect(screen.getByText('Test User')).toBeTruthy();
+
+    const trigger = screen.getByRole('button', { name: /abrir menu do usuário/i });
+    await userEvent.click(trigger);
+
+    expect(await screen.findByRole('menuitem', { name: /meu perfil/i })).toBeTruthy();
+    expect(await screen.findByRole('menuitem', { name: /configurações/i })).toBeTruthy();
+    expect(await screen.findByRole('menuitem', { name: /sair/i })).toBeTruthy();
   });
 });
 
