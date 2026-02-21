@@ -11,21 +11,70 @@
     [style.width.px]="sidenavWidthPx"
     [style.minWidth.px]="sidenavWidthPx"
   >
-    <div class="px-6 py-6 border-b border-white/10">
-      <div class="text-2xl font-bold tracking-tight">Profit AI</div>
+    <div class="h-full flex flex-col">
+      <div class="py-3 pl-[30px] pt-7">
+        <button
+          type="button"
+          [matMenuTriggerFor]="newMenu"
+          class="w-[150px] rounded-full bg-[#10b780] text-white font-semibold py-3 px-4 transition-all duration-200 flex items-center justify-center gap-3 hover:brightness-110"
+          aria-label="Criar novo"
+        >
+          <span class="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center">
+            <mat-icon class="text-white text-[22px] leading-[22px]">add</mat-icon>
+          </span>
+          <span>Novo</span>
+        </button>
+      </div>
+
+      <mat-menu #newMenu="matMenu" xPosition="after" class="w-[400px] rounded-[100px]">
+        <button
+          mat-menu-item
+          [routerLink]="['/planejamento']"
+          [queryParams]="{ novo: 'despesa' }"
+          (click)="onNavItemClick()"
+        >
+          <mat-icon svgIcon="trending-down-3" class="icon-expense"></mat-icon>
+          <span>Despesa</span>
+        </button>
+        <button
+          mat-menu-item
+          [routerLink]="['/planejamento']"
+          [queryParams]="{ novo: 'receita' }"
+          (click)="onNavItemClick()"
+        >
+          <mat-icon svgIcon="trending-up-3" class="icon-income"></mat-icon>
+          <span>Receita</span>
+        </button>
+        <button
+          mat-menu-item
+          [routerLink]="['/planejamento']"
+          [queryParams]="{ novo: 'transferencia' }"
+          (click)="onNavItemClick()"
+        >
+          <mat-icon svgIcon="repeat-3" class="icon-transfer"></mat-icon>
+          <span>Transferência</span>
+        </button>
+      </mat-menu>
+
+      <mat-nav-list class="flex-1 overflow-auto">
+        <a mat-list-item routerLink="/planejamento" routerLinkActive="bg-white/10" class="text-white" style="padding-left: 20px" (click)="onNavItemClick()">
+          <mat-icon matListItemIcon class="text-white/80">event_note</mat-icon>
+          <span matListItemTitle>Planejamento</span>
+        </a>
+        <a mat-list-item routerLink="/configuracoes" routerLinkActive="bg-white/10" class="text-white" style="padding-left: 20px" (click)="onNavItemClick()">
+          <mat-icon matListItemIcon class="text-white/80">settings</mat-icon>
+          <span matListItemTitle>Configurações</span>
+        </a>
+      </mat-nav-list>
+
+      <div class="px-5 py-4 border-t border-white/10 text-xs text-white/70 flex items-center justify-between">
+        <span class="inline-flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-[#10b780]"></span>
+          <span class="font-semibold text-black/80">Profit AI</span>
+        </span>
+        <span class="px-2 py-1 rounded-full bg-white/10 text-black/70">v1</span>
+      </div>
     </div>
-
-    <mat-nav-list>
-      <a mat-list-item routerLink="/configuracoes" routerLinkActive="bg-white/10" class="text-white" (click)="onNavItemClick()">
-        <mat-icon matListItemIcon class="text-white/80">settings</mat-icon>
-        <span matListItemTitle>Configurações</span>
-      </a>
-
-      <a mat-list-item routerLink="/planejamento" routerLinkActive="bg-white/10" class="text-white" (click)="onNavItemClick()">
-        <mat-icon matListItemIcon class="text-white/80">event_note</mat-icon>
-        <span matListItemTitle>Planejamento</span>
-      </a>
-    </mat-nav-list>
   </mat-sidenav>
 
   <mat-sidenav-content>

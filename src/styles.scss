@@ -21,3 +21,21 @@
 .cdk-overlay-container {
   z-index: 2000 !important;
 }
+
+/* Sidebar "Novo" menu icons (SVG stroke uses currentColor) */
+.mat-mdc-menu-item .mat-icon.icon-expense {
+  color: #ef5350 !important;
+}
+.mat-mdc-menu-item .mat-icon.icon-income {
+  color: #66bb6a !important;
+}
+.mat-mdc-menu-item .mat-icon.icon-transfer {
+  color: #448aff !important;
+}
+
+/* Sidebar "Novo" dropdown panel */
+.sidebar-new-menu-panel.mat-mdc-menu-panel {
+  border-radius: 100px !important;
+  overflow: hidden;
+  min-width: 400px !important;
+}

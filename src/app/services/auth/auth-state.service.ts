@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { distinctUntilChanged, map } from 'rxjs/operators';
 import { SessionStorageService } from '../storage/session-storage.service';
 import { AUTH_STORAGE_KEYS } from './auth.storage';
 
@@ -16,10 +17,15 @@ export type AuthSession = {
 export class AuthStateService {
   private readonly sessionSubject: BehaviorSubject<AuthSession>;
   readonly session$;
+  readonly isAuthenticated$;
 
   constructor(private storage: SessionStorageService) {
     this.sessionSubject = new BehaviorSubject<AuthSession>(this.readFromStorage());
     this.session$ = this.sessionSubject.asObservable();
+    this.isAuthenticated$ = this.session$.pipe(
+      map((s) => !!s.token),
+      distinctUntilChanged(),
+    );
   }
 
   get snapshot(): AuthSession {
