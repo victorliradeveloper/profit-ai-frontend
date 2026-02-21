@@ -16,3 +16,8 @@
     font-family: 'Poppins', sans-serif;
   }
 }
+
+/* Ensure Angular Material overlays (mat-menu, dialogs) appear above the sticky header */
+.cdk-overlay-container {
+  z-index: 2000 !important;
+}
