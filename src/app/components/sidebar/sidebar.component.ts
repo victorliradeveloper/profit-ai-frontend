@@ -9,7 +9,6 @@ import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { AuthStateService } from '../../services/auth/auth-state.service';
-import { AppIconsService } from '../../services/icons/app-icons.service';
 import { SidebarService } from '../../services/layout/sidebar.service';
 
 @Component({
@@ -43,12 +42,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private authState: AuthStateService,
     private sidebar: SidebarService,
     private breakpoint: BreakpointObserver,
-    private icons: AppIconsService,
   ) {}
 
   ngOnInit(): void {
-    this.icons.register();
-
     this.breakpoint
       .observe([Breakpoints.Handset])
       .pipe(takeUntil(this.destroy$))
