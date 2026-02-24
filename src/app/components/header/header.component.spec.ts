@@ -14,11 +14,12 @@ describe('HeaderComponent', () => {
   };
 
   const originalGetComputedStyle = window.getComputedStyle;
+  const mockComputedStyle = {
+    getPropertyValue: () => '',
+  } as unknown as CSSStyleDeclaration;
 
   beforeAll(() => {
-    jest.spyOn(window, 'getComputedStyle').mockImplementation(() => ({
-      getPropertyValue: () => '',
-    } as any));
+    jest.spyOn(window, 'getComputedStyle').mockImplementation(() => mockComputedStyle);
   });
 
   afterAll(() => {
