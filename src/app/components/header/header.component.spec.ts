@@ -13,6 +13,19 @@ describe('HeaderComponent', () => {
     logout: jest.fn(),
   };
 
+  const originalGetComputedStyle = window.getComputedStyle;
+  const mockComputedStyle = {
+    getPropertyValue: () => '',
+  } as unknown as CSSStyleDeclaration;
+
+  beforeAll(() => {
+    jest.spyOn(window, 'getComputedStyle').mockImplementation(() => mockComputedStyle);
+  });
+
+  afterAll(() => {
+    window.getComputedStyle = originalGetComputedStyle;
+  });
+
   const unauthSession = {
     token: null,
     userName: null,
