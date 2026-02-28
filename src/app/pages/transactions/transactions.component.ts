@@ -1,20 +1,28 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
-import { DataTableComponent } from '../../components/table/data-table/data-table.component';
-import { DataTableCellDefDirective } from '../../components/table/data-table/data-table-cell-def.directive';
 import { DataTableColumn } from '../../components/table/data-table/data-table.types';
 import { TableToolbarComponent } from '../../components/table/toolbar/table-toolbar.component';
+import { TransactionsFiltersComponent } from './components/transactions-filters/transactions-filters.component';
+import { TransactionsSummaryCard, TransactionsSummaryCardsComponent } from './components/transactions-summary-cards/transactions-summary-cards.component';
+import { TransactionRow, TransactionsTableComponent } from './components/table/table.component';
 
 @Component({
   selector: 'app-transactions',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule, MatMenuModule, DataTableComponent, DataTableCellDefDirective, TableToolbarComponent],
+  imports: [
+    CommonModule,
+    MatIconModule,
+    TableToolbarComponent,
+    TransactionsFiltersComponent,
+    TransactionsSummaryCardsComponent,
+    TransactionsTableComponent,
+  ],
   templateUrl: './transactions.component.html',
 })
 export class TransactionsComponent {
+  readonly monthLabel = 'Fevereiro 2026';
+
   readonly columns: DataTableColumn[] = [
     { key: 'status', header: 'Situação', sortable: false, resizable: false },
     {
@@ -73,20 +81,25 @@ export class TransactionsComponent {
     },
   ];
 
-  formatCurrencyBRL(value: number): string {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  readonly summaryCards: TransactionsSummaryCard[] = [
+    { title: 'Saldo atual', value: 'R$ 6.766,67', icon: 'account_balance', iconBg: '#42a5f5' },
+    { title: 'Receitas', value: 'R$ 0,00', icon: 'north', iconBg: '#22c55e' },
+    { title: 'Despesas', value: 'R$ 2.033,33', icon: 'south', iconBg: '#ef4444' },
+    { title: 'Balanço mensal', value: 'R$ -2.033,33', icon: 'balance', iconBg: '#14b8a6' },
+  ];
+
+  readonly projectedDayEndBalance = 'R$ 6.766,67';
+
+  onExport(): void {
+    // placeholder
+  }
+
+  prevMonth(): void {
+    // placeholder
+  }
+
+  nextMonth(): void {
+    // placeholder
   }
 }
-
-type TransactionRow = {
-  status: 'ok' | 'pending';
-  date: string;
-  description: string;
-  categoryName: string;
-  categoryIcon: string;
-  categoryColor: string;
-  account: string;
-  value: number;
-  type: 'income' | 'expense';
-};
 

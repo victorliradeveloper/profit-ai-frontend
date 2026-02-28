@@ -75,57 +75,11 @@
       </div>
     </app-table-toolbar>
 
-    <app-data-table
-      [columns]="columns"
+    <app-planning-table
       [rows]="rows"
       [filter]="searchValue"
-      [filterKeys]="['name', 'icon', 'color']"
-      [pageSize]="50"
-      [pageSizeOptions]="[10, 25, 50, 100]"
-    >
-      <ng-template appDataTableCellDef="icon" let-row>
-        <mat-icon class="!text-white/70 text-[18px] leading-[18px]">{{ row.icon }}</mat-icon>
-      </ng-template>
-
-      <ng-template appDataTableCellDef="color" let-row>
-        <span class="inline-block w-3.5 h-3.5 rounded-full" [style.background]="row.color"></span>
-      </ng-template>
-
-      <ng-template appDataTableCellDef="actions" let-row>
-        <div class="flex items-center justify-end gap-1">
-          <button
-            type="button"
-            mat-icon-button
-            class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0"
-            matTooltip="Detalhes"
-            (click)="onRowAction('details', row)"
-            aria-label="Detalhes"
-          >
-            <mat-icon class="text-white/70 text-[18px] leading-[18px]">description</mat-icon>
-          </button>
-          <button
-            type="button"
-            mat-icon-button
-            class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0"
-            matTooltip="Editar"
-            (click)="onRowAction('edit', row)"
-            aria-label="Editar"
-          >
-            <mat-icon class="text-white/70 text-[18px] leading-[18px]">edit</mat-icon>
-          </button>
-          <button
-            type="button"
-            mat-icon-button
-            class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0"
-            matTooltip="Arquivar"
-            (click)="onRowAction('archive', row)"
-            aria-label="Arquivar"
-          >
-            <mat-icon class="text-white/70 text-[18px] leading-[18px]">inventory_2</mat-icon>
-          </button>
-        </div>
-      </ng-template>
-    </app-data-table>
+      (rowAction)="onRowAction($event.action, $event.row)"
+    ></app-planning-table>
   </div>
 </section>
 

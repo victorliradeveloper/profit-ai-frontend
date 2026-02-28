@@ -10,130 +10,26 @@
         <span>Transações</span>
       </button>
 
-      <div toolbar-right class="flex items-center gap-3">
-        <button type="button" mat-icon-button class="text-white hover:bg-white/10" aria-label="Buscar">
-          <mat-icon class="text-white">search</mat-icon>
-        </button>
-        <button type="button" mat-icon-button class="text-white hover:bg-white/10" aria-label="Filtros">
-          <mat-icon class="text-white">filter_alt</mat-icon>
-        </button>
-        <button type="button" [matMenuTriggerFor]="moreMenu" mat-icon-button class="text-white hover:bg-white/10" aria-label="Mais">
-          <mat-icon class="text-white">more_vert</mat-icon>
-        </button>
-        <mat-menu #moreMenu="matMenu" xPosition="before" class="!bg-[#2c2c2e]">
-          <button mat-menu-item>
-            <mat-icon class="!text-[#ffffffb3]">download</mat-icon>
-            <span class="text-[#ffffffb3]">Exportar</span>
-          </button>
-        </mat-menu>
+      <div toolbar-right>
+        <app-transactions-filters (exportClicked)="onExport()"></app-transactions-filters>
       </div>
     </app-table-toolbar>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Left: table -->
       <div class="lg:col-span-2 space-y-4">
-        <div class="flex items-center justify-center gap-4 bg-[#2c2c2e] border border-white/10 rounded-2xl py-4">
-          <button type="button" mat-icon-button class="text-white hover:bg-white/10" aria-label="Mês anterior">
-            <mat-icon class="text-white">chevron_left</mat-icon>
-          </button>
-          <div class="px-4 py-2 rounded-full border border-[#7c3aed] text-[#7c3aed] font-semibold">Fevereiro 2026</div>
-          <button type="button" mat-icon-button class="text-white hover:bg-white/10" aria-label="Próximo mês">
-            <mat-icon class="text-white">chevron_right</mat-icon>
-          </button>
-        </div>
-
-        <app-data-table [columns]="columns" [rows]="rows" [pageSize]="50" [pageSizeOptions]="[10, 25, 50, 100]">
-          <!-- status -->
-          <ng-template appDataTableCellDef="status" let-row>
-            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#16a34a]">
-              <mat-icon class="text-white text-[18px] leading-[18px]">check</mat-icon>
-            </span>
-          </ng-template>
-
-          <!-- category -->
-          <ng-template appDataTableCellDef="category" let-row>
-            <div class="inline-flex items-center gap-3">
-              <span class="inline-flex items-center justify-center w-9 h-9 rounded-full" [style.background]="row.categoryColor">
-                <mat-icon class="text-white text-[18px] leading-[18px]">{{ row.categoryIcon }}</mat-icon>
-              </span>
-              <span class="text-white/85 font-medium">{{ row.categoryName }}</span>
-            </div>
-          </ng-template>
-
-          <!-- value -->
-          <ng-template appDataTableCellDef="value" let-row>
-            <span [ngClass]="row.type === 'expense' ? 'text-red-400' : 'text-[#10b780]'" class="font-semibold">
-              {{ formatCurrencyBRL(row.value) }}
-            </span>
-          </ng-template>
-
-          <!-- actions -->
-          <ng-template appDataTableCellDef="actions" let-row>
-            <div class="flex items-center justify-end gap-1">
-              <button type="button" mat-icon-button class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0" aria-label="Editar">
-                <mat-icon class="text-white/70 text-[18px] leading-[18px]">edit</mat-icon>
-              </button>
-              <button type="button" mat-icon-button class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0" aria-label="Anexos">
-                <mat-icon class="text-white/70 text-[18px] leading-[18px]">attach_file</mat-icon>
-              </button>
-              <button type="button" mat-icon-button class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0" aria-label="Excluir">
-                <mat-icon class="text-white/70 text-[18px] leading-[18px]">delete</mat-icon>
-              </button>
-              <button type="button" mat-icon-button class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0" aria-label="Mais">
-                <mat-icon class="text-white/70 text-[18px] leading-[18px]">more_vert</mat-icon>
-              </button>
-            </div>
-          </ng-template>
-        </app-data-table>
-
-        <div class="bg-[#2c2c2e] border border-white/10 rounded-2xl px-6 py-4 flex items-center justify-between">
-          <span class="text-white/85 font-semibold">Saldo Previsto Final do Dia</span>
-          <span class="text-white font-semibold">R$ 6.766,67</span>
-        </div>
+        <app-transactions-table
+          [monthLabel]="monthLabel"
+          [columns]="columns"
+          [rows]="rows"
+          [projectedDayEndBalance]="projectedDayEndBalance"
+          (prevMonth)="prevMonth()"
+          (nextMonth)="nextMonth()"
+        ></app-transactions-table>
       </div>
 
       <!-- Right: summary cards -->
-      <div class="space-y-5">
-        <div class="bg-[#2c2c2e] border border-white/10 rounded-2xl p-5 flex items-center justify-between">
-          <div>
-            <div class="text-white/70 font-semibold">Saldo atual</div>
-            <div class="text-2xl font-bold text-white">R$ 6.766,67</div>
-          </div>
-          <div class="w-14 h-14 rounded-full bg-[#42a5f5] flex items-center justify-center">
-            <mat-icon class="text-white">account_balance</mat-icon>
-          </div>
-        </div>
-
-        <div class="bg-[#2c2c2e] border border-white/10 rounded-2xl p-5 flex items-center justify-between">
-          <div>
-            <div class="text-white/70 font-semibold">Receitas</div>
-            <div class="text-2xl font-bold text-white">R$ 0,00</div>
-          </div>
-          <div class="w-14 h-14 rounded-full bg-[#22c55e] flex items-center justify-center">
-            <mat-icon class="text-white">north</mat-icon>
-          </div>
-        </div>
-
-        <div class="bg-[#2c2c2e] border border-white/10 rounded-2xl p-5 flex items-center justify-between">
-          <div>
-            <div class="text-white/70 font-semibold">Despesas</div>
-            <div class="text-2xl font-bold text-white">R$ 2.033,33</div>
-          </div>
-          <div class="w-14 h-14 rounded-full bg-[#ef4444] flex items-center justify-center">
-            <mat-icon class="text-white">south</mat-icon>
-          </div>
-        </div>
-
-        <div class="bg-[#2c2c2e] border border-white/10 rounded-2xl p-5 flex items-center justify-between">
-          <div>
-            <div class="text-white/70 font-semibold">Balanço mensal</div>
-            <div class="text-2xl font-bold text-white">R$ -2.033,33</div>
-          </div>
-          <div class="w-14 h-14 rounded-full bg-[#14b8a6] flex items-center justify-center">
-            <mat-icon class="text-white">balance</mat-icon>
-          </div>
-        </div>
-      </div>
+      <app-transactions-summary-cards [cards]="summaryCards"></app-transactions-summary-cards>
     </div>
   </div>
 </section>

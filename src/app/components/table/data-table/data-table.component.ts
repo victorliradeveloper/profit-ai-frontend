@@ -1,7 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { AfterContentInit, AfterViewInit, Component, ContentChildren, Input, OnChanges, QueryList, TemplateRef, ViewChild } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -12,7 +10,7 @@ import { DataTableColumn } from './data-table.types';
 @Component({
   selector: 'app-data-table',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule, MatPaginatorModule, MatSortModule, MatTableModule, ColumnResizeDirective],
+  imports: [CommonModule, MatPaginatorModule, MatSortModule, MatTableModule, ColumnResizeDirective],
   templateUrl: './data-table.component.html',
 })
 export class DataTableComponent implements AfterViewInit, AfterContentInit, OnChanges {

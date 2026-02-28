@@ -1,0 +1,19 @@
+<div class="flex items-center gap-3">
+  <button type="button" mat-icon-button class="text-white hover:bg-white/10" aria-label="Buscar">
+    <mat-icon class="text-white">search</mat-icon>
+  </button>
+  <button type="button" mat-icon-button class="text-white hover:bg-white/10" aria-label="Filtros">
+    <mat-icon class="text-white">filter_alt</mat-icon>
+  </button>
+  <button type="button" [matMenuTriggerFor]="moreMenu" mat-icon-button class="text-white hover:bg-white/10" aria-label="Mais">
+    <mat-icon class="text-white">more_vert</mat-icon>
+  </button>
+
+  <mat-menu #moreMenu="matMenu" xPosition="before" class="!bg-[#2c2c2e]">
+    <button mat-menu-item (click)="onExportClick()">
+      <mat-icon class="!text-[#ffffffb3]">download</mat-icon>
+      <span class="text-[#ffffffb3]">Exportar</span>
+    </button>
+  </mat-menu>
+</div>
+
