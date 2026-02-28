@@ -12,6 +12,7 @@ import { DataTableColumn } from './data-table.types';
   standalone: true,
   imports: [CommonModule, MatPaginatorModule, MatSortModule, MatTableModule, ColumnResizeDirective],
   templateUrl: './data-table.component.html',
+  styleUrl: './data-table.component.scss',
 })
 export class DataTableComponent implements AfterViewInit, AfterContentInit, OnChanges {
   @Input({ required: true }) columns: DataTableColumn[] = [];
