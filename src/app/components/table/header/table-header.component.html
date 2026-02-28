@@ -1,0 +1,93 @@
+<div class="flex items-center justify-between gap-4 mb-4">
+  <div class="flex items-center gap-3">
+    <button
+      type="button"
+      [matMenuTriggerFor]="categoryTypeMenu"
+      class="text-white font-semibold text-sm px-4 py-2 rounded-full flex items-center gap-2 border-none cursor-pointer transition-colors"
+      [ngClass]="{
+        'bg-red-500 hover:bg-red-400': state.selectedCategoryType === 'despesa',
+        'bg-[#00c853] hover:bg-[#00c853]': state.selectedCategoryType === 'receita'
+      }"
+      aria-label="Selecionar tipo de categoria"
+    >
+      <span>{{ state.categoryTypeLabel }}</span>
+      <mat-icon class="text-white text-[20px] leading-[20px]">expand_more</mat-icon>
+    </button>
+
+    <mat-menu #categoryTypeMenu="matMenu" xPosition="after" class="!bg-[#2c2c2e]">
+      <button mat-menu-item (click)="state.setCategoryType('despesa')">
+        <mat-icon class="!text-red-400">trending_down</mat-icon>
+        <span class="text-[#ffffffb3]">Categoria de Despesas</span>
+      </button>
+      <button mat-menu-item (click)="state.setCategoryType('receita')">
+        <mat-icon class="!text-[#10b780]">trending_up</mat-icon>
+        <span class="text-[#ffffffb3]">Categoria de Receitas</span>
+      </button>
+    </mat-menu>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <div *ngIf="state.showSearch" class="w-[240px] md:w-[320px]">
+      <input
+        matInput
+        [value]="state.searchValue"
+        (input)="state.searchValue = $any($event.target).value; state.applyFilter(state.searchValue)"
+        placeholder="Buscar..."
+        class="w-full h-10 px-3 rounded-full !text-white placeholder:!text-white/50 !bg-[#2c2c2e] border border-white/10 focus:outline-none"
+        aria-label="Buscar categorias"
+      />
+    </div>
+
+    <button
+      type="button"
+      mat-icon-button
+      (click)="state.onAddCategory()"
+      class="text-white hover:bg-white/10"
+      matTooltip="Adicionar"
+      aria-label="Adicionar categoria"
+    >
+      <mat-icon class="text-white">add</mat-icon>
+    </button>
+
+    <button
+      type="button"
+      mat-icon-button
+      (click)="state.onRefresh()"
+      class="text-white hover:bg-white/10"
+      matTooltip="Atualizar"
+      aria-label="Atualizar"
+    >
+      <mat-icon class="text-white">refresh</mat-icon>
+    </button>
+
+    <button
+      type="button"
+      mat-icon-button
+      (click)="state.toggleSearch()"
+      class="text-white hover:bg-white/10"
+      matTooltip="Buscar"
+      aria-label="Buscar"
+    >
+      <mat-icon class="text-white">search</mat-icon>
+    </button>
+
+    <button
+      type="button"
+      [matMenuTriggerFor]="moreMenu"
+      mat-icon-button
+      class="text-white hover:bg-white/10"
+      matTooltip="Mais"
+      aria-label="Mais ações"
+    >
+      <mat-icon class="text-white">more_vert</mat-icon>
+    </button>
+
+    <mat-menu #moreMenu="matMenu" xPosition="before" class="!bg-[#2c2c2e]">
+      <button mat-menu-item (click)="state.applyFilter('')">
+        <mat-icon class="!text-[#ffffffb3]">filter_alt_off</mat-icon>
+        <span class="text-[#ffffffb3]">Limpar filtro</span>
+      </button>
+    </mat-menu>
+  </div>
+</div>
+
