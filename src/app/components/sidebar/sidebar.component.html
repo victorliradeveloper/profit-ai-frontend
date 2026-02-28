@@ -87,6 +87,20 @@
         </a>
         <a
           mat-list-item
+          routerLink="/transacoes"
+          routerLinkActive
+          #rlaTransactions="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [activated]="rlaTransactions.isActive"
+          class="text-white"
+          style="padding-left: 20px"
+          (click)="onNavItemClick()"
+        >
+          <mat-icon matListItemIcon class="!text-[#ffffffb3]">receipt_long</mat-icon>
+          <span matListItemTitle class="!text-[#ffffffb3]">Transações</span>
+        </a>
+        <a
+          mat-list-item
           routerLink="/planejamento"
           routerLinkActive
           #rlaReports="routerLinkActive"

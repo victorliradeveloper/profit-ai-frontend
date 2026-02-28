@@ -1,0 +1,15 @@
+<div class="space-y-5">
+  <div
+    *ngFor="let card of cards"
+    class="bg-[#2c2c2e] border border-white/10 rounded-2xl p-5 flex items-center justify-between"
+  >
+    <div>
+      <div class="text-white/70 font-semibold">{{ card.title }}</div>
+      <div class="text-2xl font-bold text-white">{{ card.value }}</div>
+    </div>
+    <div class="w-14 h-14 rounded-full flex items-center justify-center" [style.background]="card.iconBg">
+      <mat-icon class="text-white">{{ card.icon }}</mat-icon>
+    </div>
+  </div>
+</div>
+

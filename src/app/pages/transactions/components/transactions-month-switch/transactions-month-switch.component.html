@@ -1,0 +1,10 @@
+<div class="flex items-center justify-center gap-4 bg-[#2c2c2e] border border-white/10 rounded-2xl py-4">
+  <button type="button" mat-icon-button class="text-white hover:bg-white/10" aria-label="Mês anterior" (click)="prev.emit()">
+    <mat-icon class="text-white">chevron_left</mat-icon>
+  </button>
+  <div class="px-4 py-2 rounded-full border border-[#7c3aed] text-[#7c3aed] font-semibold">{{ label }}</div>
+  <button type="button" mat-icon-button class="text-white hover:bg-white/10" aria-label="Próximo mês" (click)="next.emit()">
+    <mat-icon class="text-white">chevron_right</mat-icon>
+  </button>
+</div>
+

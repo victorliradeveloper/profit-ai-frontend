@@ -1,0 +1,36 @@
+<section class="min-h-[calc(100vh-80px)] bg-[#1c1c1e] text-white">
+  <div class="max-w-6xl mx-auto px-4 md:px-8 py-8">
+    <app-table-toolbar containerClass="mb-6">
+      <button
+        toolbar-left
+        type="button"
+        class="rounded-full bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-semibold py-2.5 px-5 flex items-center gap-2 border-none cursor-pointer transition-colors"
+      >
+        <mat-icon class="text-white text-[20px] leading-[20px]">expand_more</mat-icon>
+        <span>Transações</span>
+      </button>
+
+      <div toolbar-right>
+        <app-transactions-filters (exportClicked)="onExport()"></app-transactions-filters>
+      </div>
+    </app-table-toolbar>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Left: table -->
+      <div class="lg:col-span-2 space-y-4">
+        <app-transactions-table
+          [monthLabel]="monthLabel"
+          [columns]="columns"
+          [rows]="rows"
+          [projectedDayEndBalance]="projectedDayEndBalance"
+          (prevMonth)="prevMonth()"
+          (nextMonth)="nextMonth()"
+        ></app-transactions-table>
+      </div>
+
+      <!-- Right: summary cards -->
+      <app-transactions-summary-cards [cards]="summaryCards"></app-transactions-summary-cards>
+    </div>
+  </div>
+</section>
+

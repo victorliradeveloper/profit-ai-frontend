@@ -1,0 +1,54 @@
+<div class="space-y-4">
+  <app-transactions-month-switch
+    [label]="monthLabel"
+    (prev)="prevMonth.emit()"
+    (next)="nextMonth.emit()"
+  ></app-transactions-month-switch>
+
+  <app-data-table [columns]="columns" [rows]="rows" [pageSize]="50" [pageSizeOptions]="[10, 25, 50, 100]">
+    <!-- status -->
+    <ng-template appDataTableCellDef="status" let-row>
+      <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#16a34a]">
+        <mat-icon class="text-white text-[18px] leading-[18px]">check</mat-icon>
+      </span>
+    </ng-template>
+
+    <!-- category -->
+    <ng-template appDataTableCellDef="category" let-row>
+      <div class="inline-flex items-center gap-3">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full" [style.background]="row.categoryColor">
+          <mat-icon class="text-white text-[18px] leading-[18px]">{{ row.categoryIcon }}</mat-icon>
+        </span>
+        <span class="text-white/85 font-medium">{{ row.categoryName }}</span>
+      </div>
+    </ng-template>
+
+    <!-- value -->
+    <ng-template appDataTableCellDef="value" let-row>
+      <span [ngClass]="row.type === 'expense' ? 'text-red-400' : 'text-[#10b780]'" class="font-semibold">
+        {{ formatCurrencyBRL(row.value) }}
+      </span>
+    </ng-template>
+
+    <!-- actions -->
+    <ng-template appDataTableCellDef="actions" let-row>
+      <div class="flex items-center justify-end gap-1">
+        <button type="button" mat-icon-button class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0" aria-label="Editar">
+          <mat-icon class="text-white/70 text-[18px] leading-[18px]">edit</mat-icon>
+        </button>
+        <button type="button" mat-icon-button class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0" aria-label="Anexos">
+          <mat-icon class="text-white/70 text-[18px] leading-[18px]">attach_file</mat-icon>
+        </button>
+        <button type="button" mat-icon-button class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0" aria-label="Excluir">
+          <mat-icon class="text-white/70 text-[18px] leading-[18px]">delete</mat-icon>
+        </button>
+        <button type="button" mat-icon-button class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0" aria-label="Mais">
+          <mat-icon class="text-white/70 text-[18px] leading-[18px]">more_vert</mat-icon>
+        </button>
+      </div>
+    </ng-template>
+  </app-data-table>
+
+  <app-transactions-balance-footer [value]="projectedDayEndBalance"></app-transactions-balance-footer>
+</div>
+
