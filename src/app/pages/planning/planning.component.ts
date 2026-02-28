@@ -8,6 +8,7 @@ import { MatPaginator, MatPaginatorIntl, MatPaginatorModule } from '@angular/mat
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ColumnResizeDirective } from '../../components/shared/directives/column-resize.directive';
 
 @Component({
   selector: 'app-planning',
@@ -22,6 +23,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatSortModule,
     MatTableModule,
     MatTooltipModule,
+    ColumnResizeDirective,
   ],
   templateUrl: './planning.component.html',
   providers: [
