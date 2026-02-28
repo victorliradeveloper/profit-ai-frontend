@@ -1,5 +1,5 @@
 <section class="min-h-[calc(100vh-80px)] bg-[#1c1c1e] text-white">
-  <div class="max-w-6xl mx-auto px-4 md:px-8 py-8">
+  <div class="w-full mx-auto px-4 md:px-8 py-8">
     <app-table-toolbar containerClass="mb-6">
       <button
         toolbar-left
@@ -15,9 +15,9 @@
       </div>
     </app-table-toolbar>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6">
       <!-- Left: table -->
-      <div class="lg:col-span-2 space-y-4">
+      <div class="space-y-4 min-w-0">
         <app-transactions-table
           [monthLabel]="monthLabel"
           [columns]="columns"

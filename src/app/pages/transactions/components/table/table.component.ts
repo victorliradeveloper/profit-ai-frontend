@@ -43,7 +43,6 @@ export type TransactionRow = {
   categoryName: string;
   categoryIcon: string;
   categoryColor: string;
-  account: string;
   value: number;
   type: 'income' | 'expense';
 };
