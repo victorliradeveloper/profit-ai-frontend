@@ -26,6 +26,7 @@ import { ColumnResizeDirective } from '../../components/shared/directives/column
     ColumnResizeDirective,
   ],
   templateUrl: './planning.component.html',
+  styleUrl: './planning.component.scss',
   providers: [
     {
       provide: MatPaginatorIntl,
