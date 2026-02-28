@@ -1,12 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-
-export type SegmentedControlItem = {
-  id: string;
-  label: string;
-  ariaLabel?: string;
-  disabled?: boolean;
-};
+import { SegmentedControlItem } from './segmented-control.types';
 
 @Component({
   selector: 'app-segmented-control',

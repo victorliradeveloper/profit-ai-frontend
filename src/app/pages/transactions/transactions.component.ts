@@ -4,8 +4,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { DataTableColumn } from '../../components/table/data-table/data-table.types';
 import { TableToolbarComponent } from '../../components/table/toolbar/table-toolbar.component';
 import { TransactionsFiltersComponent } from './components/transactions-filters/transactions-filters.component';
-import { TransactionsSummaryCard, TransactionsSummaryCardsComponent } from './components/transactions-summary-cards/transactions-summary-cards.component';
-import { TransactionRow, TransactionsTableComponent } from './components/table/table.component';
+import { TransactionsSummaryCardsComponent } from './components/transactions-summary-cards/transactions-summary-cards.component';
+import { TransactionsSummaryCard } from './components/transactions-summary-cards/transactions-summary-cards.types';
+import { TransactionsTableComponent } from './components/table/table.component';
+import { TransactionRow } from './components/table/table.types';
 
 @Component({
   selector: 'app-transactions',

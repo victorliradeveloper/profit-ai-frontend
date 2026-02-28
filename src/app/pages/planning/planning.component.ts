@@ -6,7 +6,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TableToolbarComponent } from '../../components/table/toolbar/table-toolbar.component';
-import { CategoryRow, PlanningTableComponent } from './components/table/table.component';
+import { PlanningTableComponent } from './components/table/table.component';
+import { CategoryRow } from './components/table/table.types';
 
 @Component({
   selector: 'app-planning',

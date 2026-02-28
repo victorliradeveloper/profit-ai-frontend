@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { SegmentedControlComponent, SegmentedControlItem } from '../../components/shared/segmented-control/segmented-control.component';
+import { SegmentedControlComponent } from '../../components/shared/segmented-control/segmented-control.component';
+import { SegmentedControlItem } from '../../components/shared/segmented-control/segmented-control.types';
 import { ChangePasswordSectionComponent } from './sections/change-password/change-password-section.component';
 import { ProfileFormComponent } from './sections/profile-form/profile-form.component';
 import { ProfileImageSectionComponent } from './sections/profile-image/profile-image-section.component';

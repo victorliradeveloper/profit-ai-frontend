@@ -6,6 +6,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { DataTableComponent } from '../../../../components/table/data-table/data-table.component';
 import { DataTableCellDefDirective } from '../../../../components/table/data-table/data-table-cell-def.directive';
 import { DataTableColumn } from '../../../../components/table/data-table/data-table.types';
+import { CategoryRow } from './table.types';
 
 @Component({
   selector: 'app-planning-table',
@@ -23,17 +24,11 @@ export class PlanningTableComponent {
     { key: 'name', header: 'Nome', sortable: true, resizable: true },
     { key: 'icon', header: 'Ícone', sortable: false, resizable: true },
     { key: 'color', header: 'Cor', sortable: false, resizable: true },
-    { key: 'actions', header: 'Ações', sortable: false, resizable: false, align: 'right' },
+    { key: 'actions', header: 'Ações', sortable: false, resizable: false, align: 'left' },
   ];
 
   onAction(action: 'details' | 'edit' | 'archive', row: CategoryRow): void {
     this.rowAction.emit({ action, row });
   }
 }
-
-export type CategoryRow = {
-  name: string;
-  icon: string;
-  color: string;
-};
 

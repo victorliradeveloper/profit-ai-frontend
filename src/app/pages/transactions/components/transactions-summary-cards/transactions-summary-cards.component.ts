@@ -1,13 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-
-export type TransactionsSummaryCard = {
-  title: string;
-  value: string;
-  icon: string;
-  iconBg: string;
-};
+import { TransactionsSummaryCard } from './transactions-summary-cards.types';
 
 @Component({
   selector: 'app-transactions-summary-cards',

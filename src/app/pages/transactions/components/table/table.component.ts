@@ -7,6 +7,7 @@ import { DataTableCellDefDirective } from '../../../../components/table/data-tab
 import { DataTableColumn } from '../../../../components/table/data-table/data-table.types';
 import { TransactionsBalanceFooterComponent } from '../transactions-balance-footer/transactions-balance-footer.component';
 import { TransactionsMonthSwitchComponent } from '../transactions-month-switch/transactions-month-switch.component';
+import { TransactionRow } from './table.types';
 
 @Component({
   selector: 'app-transactions-table',
@@ -35,15 +36,4 @@ export class TransactionsTableComponent {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   }
 }
-
-export type TransactionRow = {
-  status: 'ok' | 'pending';
-  date: string;
-  description: string;
-  categoryName: string;
-  categoryIcon: string;
-  categoryColor: string;
-  value: number;
-  type: 'income' | 'expense';
-};
 
