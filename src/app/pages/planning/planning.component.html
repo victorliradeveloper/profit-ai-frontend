@@ -5,7 +5,11 @@
       <button
         type="button"
         [matMenuTriggerFor]="categoryTypeMenu"
-        class="bg-red-500 hover:bg-red-400 text-white font-semibold text-sm px-4 py-2 rounded-full flex items-center gap-2 border-none cursor-pointer"
+        class="text-white font-semibold text-sm px-4 py-2 rounded-full flex items-center gap-2 border-none cursor-pointer transition-colors"
+        [ngClass]="{
+          'bg-red-500 hover:bg-red-400': selectedCategoryType === 'despesa',
+          'bg-[#10b780] hover:bg-[#0ea371]': selectedCategoryType === 'receita'
+        }"
         aria-label="Selecionar tipo de categoria"
       >
         <span>{{ categoryTypeLabel }}</span>
@@ -144,43 +148,32 @@
           <button
             type="button"
             mat-icon-button
-            class="text-white/80 hover:bg-white/10"
+            class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0"
             matTooltip="Detalhes"
             (click)="onRowAction('details', row)"
             aria-label="Detalhes"
           >
-            <mat-icon class="text-white/70">description</mat-icon>
+            <mat-icon class="text-white/70 text-[18px] leading-[18px]">description</mat-icon>
           </button>
           <button
             type="button"
             mat-icon-button
-            class="text-white/80 hover:bg-white/10"
+            class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0"
             matTooltip="Editar"
             (click)="onRowAction('edit', row)"
             aria-label="Editar"
           >
-            <mat-icon class="text-white/70">edit</mat-icon>
+            <mat-icon class="text-white/70 text-[18px] leading-[18px]">edit</mat-icon>
           </button>
           <button
             type="button"
             mat-icon-button
-            class="text-white/80 hover:bg-white/10"
+            class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0"
             matTooltip="Arquivar"
             (click)="onRowAction('archive', row)"
             aria-label="Arquivar"
           >
-            <mat-icon class="text-white/70">inventory_2</mat-icon>
-          </button>
-          <button
-            type="button"
-            mat-mini-fab
-            color="warn"
-            class="!shadow-none !w-9 !h-9 !min-w-0 ml-2"
-            matTooltip="Adicionar subcategoria"
-            (click)="onRowAction('addSub', row)"
-            aria-label="Adicionar subcategoria"
-          >
-            <mat-icon class="text-white">add</mat-icon>
+            <mat-icon class="text-white/70 text-[18px] leading-[18px]">inventory_2</mat-icon>
           </button>
         </td>
       </ng-container>
