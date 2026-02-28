@@ -2,10 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-planning',
+  selector: 'app-reports',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './planning.component.html',
+  templateUrl: './reports.component.html',
 })
-export class PlanningComponent {}
+export class ReportsComponent {}
 

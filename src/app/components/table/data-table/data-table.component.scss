@@ -1,0 +1,38 @@
+/* Local (scoped to app-data-table) Material overrides.
+   Note: ::ng-deep is required to style inside MDC components (mat-paginator/mat-select). */
+
+:host ::ng-deep .mat-mdc-paginator {
+  --mat-paginator-container-text-color: rgba(255, 255, 255, 0.8);
+  --mat-paginator-enabled-icon-color: rgba(255, 255, 255, 0.7);
+  --mat-paginator-disabled-icon-color: rgba(255, 255, 255, 0.3);
+  --mat-select-enabled-trigger-text-color: rgba(255, 255, 255, 0.85);
+  --mat-select-enabled-arrow-color: rgba(255, 255, 255, 0.7);
+  --mat-form-field-enabled-select-arrow-color: rgba(255, 255, 255, 0.7);
+  --mat-form-field-enabled-input-text-color: rgba(255, 255, 255, 0.85);
+  --mat-form-field-enabled-floating-label-text-color: rgba(255, 255, 255, 0.7);
+}
+
+:host ::ng-deep .mat-mdc-paginator,
+:host ::ng-deep .mat-mdc-paginator .mat-mdc-paginator-page-size-label,
+:host ::ng-deep .mat-mdc-paginator .mat-mdc-paginator-range-label {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+:host ::ng-deep .mat-mdc-paginator .mat-mdc-icon-button,
+:host ::ng-deep .mat-mdc-paginator .mat-mdc-icon-button .mat-mdc-paginator-icon {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+:host ::ng-deep .mat-mdc-paginator .mat-mdc-icon-button[disabled],
+:host ::ng-deep .mat-mdc-paginator .mat-mdc-icon-button[disabled] .mat-mdc-paginator-icon {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+:host ::ng-deep .mat-mdc-paginator .mat-mdc-select-value-text {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+:host ::ng-deep .mat-mdc-paginator .mat-mdc-select-arrow {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
