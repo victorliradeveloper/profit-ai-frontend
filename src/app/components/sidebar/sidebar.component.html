@@ -57,27 +57,87 @@
       </mat-menu>
 
       <mat-nav-list class="flex-1 overflow-auto">
-        <a mat-list-item routerLink="/planejamento" routerLinkActive="bg-white/10" class="text-white" style="padding-left: 20px" (click)="onNavItemClick()">
+        <a
+          mat-list-item
+          routerLink="/"
+          routerLinkActive
+          #rlaDashboard="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [activated]="rlaDashboard.isActive"
+          class="text-white"
+          style="padding-left: 20px"
+          (click)="onNavItemClick()"
+        >
           <mat-icon matListItemIcon class="!text-[#ffffffb3]">home</mat-icon>
           <span matListItemTitle class="!text-[#ffffffb3]">Dashboard</span>
         </a>
-        <a mat-list-item routerLink="/planejamento" routerLinkActive="bg-white/10" class="text-white" style="padding-left: 20px" (click)="onNavItemClick()">
+        <a
+          mat-list-item
+          routerLink="/planejamento"
+          routerLinkActive
+          #rlaPlanning="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [activated]="rlaPlanning.isActive"
+          class="text-white"
+          style="padding-left: 20px"
+          (click)="onNavItemClick()"
+        >
           <mat-icon matListItemIcon class="!text-[#ffffffb3]">event_note</mat-icon>
           <span matListItemTitle class="!text-[#ffffffb3]">Planejamento</span>
         </a>
-        <a mat-list-item routerLink="/planejamento" routerLinkActive="bg-white/10" class="text-white" style="padding-left: 20px" (click)="onNavItemClick()">
+        <a
+          mat-list-item
+          routerLink="/planejamento"
+          routerLinkActive
+          #rlaReports="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [activated]="rlaReports.isActive"
+          class="text-white"
+          style="padding-left: 20px"
+          (click)="onNavItemClick()"
+        >
           <mat-icon matListItemIcon class="!text-[#ffffffb3]">pie_chart</mat-icon>
           <span matListItemTitle class="!text-[#ffffffb3]">Relatórios</span>
         </a>
-        <a mat-list-item routerLink="/assistente" routerLinkActive="bg-white/10" class="text-white" style="padding-left: 20px" (click)="onNavItemClick()">
+        <a
+          mat-list-item
+          routerLink="/assistente"
+          routerLinkActive
+          #rlaAssistant="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [activated]="rlaAssistant.isActive"
+          class="text-white"
+          style="padding-left: 20px"
+          (click)="onNavItemClick()"
+        >
           <mat-icon matListItemIcon class="!text-[#ffffffb3]">smart_toy</mat-icon>
           <span matListItemTitle class="!text-[#ffffffb3]">Assistente IA</span>
         </a>
-        <a mat-list-item routerLink="/planejamento" routerLinkActive="bg-white/10" class="!text-white/80" style="padding-left: 20px" (click)="onNavItemClick()">
+        <a
+          mat-list-item
+          routerLink="/planejamento"
+          routerLinkActive
+          #rlaCategories="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [activated]="rlaCategories.isActive"
+          class="!text-white/80"
+          style="padding-left: 20px"
+          (click)="onNavItemClick()"
+        >
           <mat-icon matListItemIcon class="!text-[#ffffffb3]">input</mat-icon>
           <span matListItemTitle class="!text-[#ffffffb3]">Categorias</span>
         </a>
-        <a mat-list-item routerLink="/configuracoes" routerLinkActive="bg-white/10"  class="!text-white/80" style="padding-left: 20px" (click)="onNavItemClick()">
+        <a
+          mat-list-item
+          routerLink="/configuracoes"
+          routerLinkActive
+          #rlaSettings="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [activated]="rlaSettings.isActive"
+          class="!text-white/80"
+          style="padding-left: 20px"
+          (click)="onNavItemClick()"
+        >
           <mat-icon matListItemIcon class="!text-[#ffffffb3]">settings</mat-icon>
           <span matListItemTitle class="!text-[#ffffffb3]">Configurações</span>
         </a>
