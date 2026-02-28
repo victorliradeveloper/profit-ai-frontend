@@ -1,72 +1,35 @@
-import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ViewChild } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatPaginator, MatPaginatorIntl, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { ColumnResizeDirective } from '../shared/directives/column-resize.directive';
+import { Injectable } from '@angular/core';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
+import { MatTableDataSource } from '@angular/material/table';
+import { CategoryRow, TableCategoryType } from './table.types';
 
-@Component({
-  selector: 'app-table',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatButtonModule,
-    MatIconModule,
-    MatInputModule,
-    MatMenuModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatTableModule,
-    MatTooltipModule,
-    ColumnResizeDirective,
-  ],
-  templateUrl: './table.component.html',
-  styleUrl: './table.component.scss',
-  providers: [
-    {
-      provide: MatPaginatorIntl,
-      useFactory: () => {
-        const intl = new MatPaginatorIntl();
-        intl.itemsPerPageLabel = 'Linhas por página:';
-        intl.nextPageLabel = 'Próxima página';
-        intl.previousPageLabel = 'Página anterior';
-        intl.firstPageLabel = 'Primeira página';
-        intl.lastPageLabel = 'Última página';
-        intl.getRangeLabel = (page: number, pageSize: number, length: number) => {
-          if (length === 0 || pageSize === 0) return `0 de ${length}`;
-          const startIndex = page * pageSize;
-          const endIndex = startIndex < length ? Math.min(startIndex + pageSize, length) : startIndex + pageSize;
-          return `${startIndex + 1}-${endIndex} de ${length}`;
-        };
-        return intl;
-      },
-    },
-  ],
-})
-export class TableComponent implements AfterViewInit {
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
-
-  selectedCategoryType: 'despesa' | 'receita' = 'despesa';
+@Injectable()
+export class TableStateService {
+  selectedCategoryType: TableCategoryType = 'despesa';
   showSearch = false;
   searchValue = '';
 
   readonly displayedColumns: Array<keyof CategoryRow | 'actions'> = ['name', 'icon', 'color', 'actions'];
   readonly dataSource = new MatTableDataSource<CategoryRow>(this.getMockRowsFor('despesa'));
 
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
+  private paginator?: MatPaginator;
+
+  constructor() {
     this.dataSource.filterPredicate = (data, filter) => {
       const v = (filter || '').trim().toLowerCase();
       if (!v) return true;
       return data.name.toLowerCase().includes(v) || data.icon.toLowerCase().includes(v) || data.color.toLowerCase().includes(v);
     };
+  }
+
+  setPaginator(paginator: MatPaginator): void {
+    this.paginator = paginator;
+    this.dataSource.paginator = paginator;
+  }
+
+  setSort(sort: MatSort): void {
+    this.dataSource.sort = sort;
   }
 
   toggleSearch(): void {
@@ -79,17 +42,16 @@ export class TableComponent implements AfterViewInit {
 
   applyFilter(value: string): void {
     this.dataSource.filter = (value || '').trim().toLowerCase();
-    if (this.dataSource.paginator) this.dataSource.paginator.firstPage();
+    if (this.paginator) this.paginator.firstPage();
   }
 
-  setCategoryType(type: 'despesa' | 'receita'): void {
+  setCategoryType(type: TableCategoryType): void {
     this.selectedCategoryType = type;
     this.dataSource.data = this.getMockRowsFor(type);
     this.applyFilter(this.searchValue);
   }
 
   onRefresh(): void {
-    // Placeholder: here you would re-fetch categories from the API.
     this.dataSource.data = this.getMockRowsFor(this.selectedCategoryType);
     this.applyFilter(this.searchValue);
   }
@@ -108,7 +70,7 @@ export class TableComponent implements AfterViewInit {
     return this.selectedCategoryType === 'despesa' ? 'Categoria de Despesas' : 'Categoria de Receitas';
   }
 
-  private getMockRowsFor(type: 'despesa' | 'receita'): CategoryRow[] {
+  private getMockRowsFor(type: TableCategoryType): CategoryRow[] {
     if (type === 'receita') {
       return [
         { name: 'Salário', icon: 'payments', color: '#10b780' },
@@ -136,10 +98,4 @@ export class TableComponent implements AfterViewInit {
     ];
   }
 }
-
-type CategoryRow = {
-  name: string;
-  icon: string;
-  color: string;
-};
 
