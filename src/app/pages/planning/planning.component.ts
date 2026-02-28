@@ -5,10 +5,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { DataTableComponent } from '../../components/table/data-table/data-table.component';
-import { DataTableCellDefDirective } from '../../components/table/data-table/data-table-cell-def.directive';
-import { DataTableColumn } from '../../components/table/data-table/data-table.types';
 import { TableToolbarComponent } from '../../components/table/toolbar/table-toolbar.component';
+import { CategoryRow, PlanningTableComponent } from './components/table/table.component';
 
 @Component({
   selector: 'app-planning',
@@ -20,9 +18,8 @@ import { TableToolbarComponent } from '../../components/table/toolbar/table-tool
     MatInputModule,
     MatMenuModule,
     MatTooltipModule,
-    DataTableComponent,
-    DataTableCellDefDirective,
     TableToolbarComponent,
+    PlanningTableComponent,
   ],
   templateUrl: './planning.component.html',
 })
@@ -30,13 +27,6 @@ export class PlanningComponent {
   selectedCategoryType: 'despesa' | 'receita' = 'despesa';
   showSearch = false;
   searchValue = '';
-
-  readonly columns: DataTableColumn[] = [
-    { key: 'name', header: 'Nome', sortable: true, resizable: true },
-    { key: 'icon', header: 'Ícone', sortable: false, resizable: true },
-    { key: 'color', header: 'Cor', sortable: false, resizable: true },
-    { key: 'actions', header: 'Ações', sortable: false, resizable: false, align: 'right' },
-  ];
 
   rows: CategoryRow[] = this.getMockRowsFor(this.selectedCategoryType);
 
@@ -96,10 +86,4 @@ export class PlanningComponent {
     ];
   }
 }
-
-type CategoryRow = {
-  name: string;
-  icon: string;
-  color: string;
-};
 
