@@ -8,6 +8,6 @@ import { Component, Input } from '@angular/core';
   templateUrl: './table-toolbar.component.html',
 })
 export class TableToolbarComponent {
-  @Input() class = '';
+  @Input() containerClass = '';
 }
 

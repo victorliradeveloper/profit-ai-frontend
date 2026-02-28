@@ -17,7 +17,19 @@ import { TableToolbarComponent } from '../../components/table/toolbar/table-tool
 export class TransactionsComponent {
   readonly columns: DataTableColumn[] = [
     { key: 'status', header: 'Situação', sortable: false, resizable: false },
-    { key: 'date', header: 'Data', sortable: true, resizable: true },
+    {
+      key: 'date',
+      header: 'Data',
+      sortable: true,
+      resizable: true,
+      sortAccessor: (row) => {
+        const v = (row as Record<string, unknown>)?.['date'];
+        if (typeof v !== 'string') return '';
+        const [dd, mm, yyyy] = v.split('/').map((x) => Number(x));
+        if (!dd || !mm || !yyyy) return v;
+        return new Date(yyyy, mm - 1, dd).getTime();
+      },
+    },
     { key: 'description', header: 'Descrição', sortable: true, resizable: true },
     { key: 'category', header: 'Categoria', sortable: false, resizable: true },
     { key: 'account', header: 'Conta', sortable: true, resizable: true },
