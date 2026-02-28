@@ -1,23 +1,26 @@
 <div class="space-y-4">
   <app-transactions-month-switch
+    class="block"
     [label]="monthLabel"
     (prev)="prevMonth.emit()"
     (next)="nextMonth.emit()"
   ></app-transactions-month-switch>
 
-  <app-data-table [columns]="columns" [rows]="rows" [pageSize]="50" [pageSizeOptions]="[10, 25, 50, 100]">
+  <app-data-table class="block" [columns]="columns" [rows]="rows" [pageSize]="50" [pageSizeOptions]="[10, 25, 50, 100]">
     <!-- status -->
     <ng-template appDataTableCellDef="status" let-row>
-      <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#16a34a]">
-        <mat-icon class="text-white text-[18px] leading-[18px]">check</mat-icon>
+      <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#16a34a]">
+         <mat-icon class="text-white !text-[15px] inline-flex items-center justify-center !w-[15px] !h-[15px] !leading-none">check</mat-icon>
       </span>
     </ng-template>
 
     <!-- category -->
     <ng-template appDataTableCellDef="category" let-row>
       <div class="inline-flex items-center gap-3">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full" [style.background]="row.categoryColor">
-          <mat-icon class="text-white text-[18px] leading-[18px]">{{ row.categoryIcon }}</mat-icon>
+        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full" [style.background]="row.categoryColor">
+           <mat-icon class="text-white !text-[16px] inline-flex items-center justify-center !w-[16px] !h-[16px] !leading-none">
+            {{ row.categoryIcon }}
+          </mat-icon>
         </span>
         <span class="text-white/85 font-medium">{{ row.categoryName }}</span>
       </div>
@@ -49,6 +52,6 @@
     </ng-template>
   </app-data-table>
 
-  <app-transactions-balance-footer [value]="projectedDayEndBalance"></app-transactions-balance-footer>
+  <app-transactions-balance-footer class="block" [value]="projectedDayEndBalance"></app-transactions-balance-footer>
 </div>
 
