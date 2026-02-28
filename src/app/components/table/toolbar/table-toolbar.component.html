@@ -1,0 +1,10 @@
+<div class="flex items-center justify-between gap-4" [ngClass]="class">
+  <div class="flex items-center gap-3">
+    <ng-content select="[toolbar-left]"></ng-content>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <ng-content select="[toolbar-right]"></ng-content>
+  </div>
+</div>
+

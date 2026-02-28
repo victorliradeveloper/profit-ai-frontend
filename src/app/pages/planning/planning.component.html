@@ -1,2 +1,131 @@
-<app-table></app-table>
+<section class="min-h-[calc(100vh-80px)] bg-[#1c1c1e] text-white">
+  <div class="max-w-6xl mx-auto px-4 md:px-8 py-8">
+    <app-table-toolbar class="mb-4">
+      <div toolbar-left class="flex items-center gap-3">
+        <button
+          type="button"
+          [matMenuTriggerFor]="categoryTypeMenu"
+          class="text-white font-semibold text-sm px-4 py-2 rounded-full flex items-center gap-2 border-none cursor-pointer transition-colors"
+          [ngClass]="{
+            'bg-red-500 hover:bg-red-400': selectedCategoryType === 'despesa',
+            'bg-[#00c853] hover:bg-[#00c853]': selectedCategoryType === 'receita'
+          }"
+          aria-label="Selecionar tipo de categoria"
+        >
+          <span>{{ categoryTypeLabel }}</span>
+          <mat-icon class="text-white text-[20px] leading-[20px]">expand_more</mat-icon>
+        </button>
+
+        <mat-menu #categoryTypeMenu="matMenu" xPosition="after" class="!bg-[#2c2c2e]">
+          <button mat-menu-item (click)="setCategoryType('despesa')">
+            <mat-icon class="!text-red-400">trending_down</mat-icon>
+            <span class="text-[#ffffffb3]">Categoria de Despesas</span>
+          </button>
+          <button mat-menu-item (click)="setCategoryType('receita')">
+            <mat-icon class="!text-[#10b780]">trending_up</mat-icon>
+            <span class="text-[#ffffffb3]">Categoria de Receitas</span>
+          </button>
+        </mat-menu>
+      </div>
+
+      <div toolbar-right class="flex items-center gap-2">
+        <div *ngIf="showSearch" class="w-[240px] md:w-[320px]">
+          <input
+            matInput
+            [value]="searchValue"
+            (input)="searchValue = $any($event.target).value"
+            placeholder="Buscar..."
+            class="w-full h-10 px-3 rounded-full !text-white placeholder:!text-white/50 !bg-[#2c2c2e] border border-white/10 focus:outline-none"
+            aria-label="Buscar categorias"
+          />
+        </div>
+
+        <button
+          type="button"
+          mat-icon-button
+          (click)="onAddCategory()"
+          class="text-white hover:bg-white/10"
+          matTooltip="Adicionar"
+          aria-label="Adicionar categoria"
+        >
+          <mat-icon class="text-white">add</mat-icon>
+        </button>
+
+        <button
+          type="button"
+          mat-icon-button
+          (click)="onRefresh()"
+          class="text-white hover:bg-white/10"
+          matTooltip="Atualizar"
+          aria-label="Atualizar"
+        >
+          <mat-icon class="text-white">refresh</mat-icon>
+        </button>
+
+        <button
+          type="button"
+          mat-icon-button
+          (click)="toggleSearch()"
+          class="text-white hover:bg-white/10"
+          matTooltip="Buscar"
+          aria-label="Buscar"
+        >
+          <mat-icon class="text-white">search</mat-icon>
+        </button>
+      </div>
+    </app-table-toolbar>
+
+    <app-data-table
+      [columns]="columns"
+      [rows]="rows"
+      [filter]="searchValue"
+      [filterKeys]="['name', 'icon', 'color']"
+      [pageSize]="50"
+      [pageSizeOptions]="[10, 25, 50, 100]"
+    >
+      <ng-template appDataTableCellDef="icon" let-row>
+        <mat-icon class="!text-white/70 text-[18px] leading-[18px]">{{ row.icon }}</mat-icon>
+      </ng-template>
+
+      <ng-template appDataTableCellDef="color" let-row>
+        <span class="inline-block w-3.5 h-3.5 rounded-full" [style.background]="row.color"></span>
+      </ng-template>
+
+      <ng-template appDataTableCellDef="actions" let-row>
+        <div class="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            mat-icon-button
+            class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0"
+            matTooltip="Detalhes"
+            (click)="onRowAction('details', row)"
+            aria-label="Detalhes"
+          >
+            <mat-icon class="text-white/70 text-[18px] leading-[18px]">description</mat-icon>
+          </button>
+          <button
+            type="button"
+            mat-icon-button
+            class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0"
+            matTooltip="Editar"
+            (click)="onRowAction('edit', row)"
+            aria-label="Editar"
+          >
+            <mat-icon class="text-white/70 text-[18px] leading-[18px]">edit</mat-icon>
+          </button>
+          <button
+            type="button"
+            mat-icon-button
+            class="text-white/80 hover:bg-white/10 !w-8 !h-8 !p-0"
+            matTooltip="Arquivar"
+            (click)="onRowAction('archive', row)"
+            aria-label="Arquivar"
+          >
+            <mat-icon class="text-white/70 text-[18px] leading-[18px]">inventory_2</mat-icon>
+          </button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</section>
 
