@@ -9,12 +9,12 @@ import { DataTableColumn } from '../../../../components/table/data-table/data-ta
 import { CategoryRow } from './table.types';
 
 @Component({
-  selector: 'app-planning-table',
+  selector: 'app-categories-table',
   standalone: true,
   imports: [CommonModule, MatButtonModule, MatIconModule, MatTooltipModule, DataTableComponent, DataTableCellDefDirective],
   templateUrl: './table.component.html',
 })
-export class PlanningTableComponent {
+export class CategoriesTableComponent {
   @Input() rows: CategoryRow[] = [];
   @Input() filter = '';
 
