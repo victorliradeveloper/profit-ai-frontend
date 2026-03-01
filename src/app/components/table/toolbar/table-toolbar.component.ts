@@ -9,5 +9,8 @@ import { Component, Input } from '@angular/core';
 })
 export class TableToolbarComponent {
   @Input() containerClass = '';
+  @Input() ariaLabel = 'Toolbar';
+  @Input() title = '';
+  @Input() subtitle = '';
 }
 

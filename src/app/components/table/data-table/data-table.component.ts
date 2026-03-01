@@ -14,20 +14,29 @@ import { DataTableColumn } from './data-table.types';
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.scss',
 })
-export class DataTableComponent implements AfterViewInit, AfterContentInit, OnChanges {
-  @Input({ required: true }) columns: DataTableColumn[] = [];
-  @Input() rows: unknown[] = [];
+export class DataTableComponent<T extends Record<string, unknown> = Record<string, unknown>>
+  implements AfterViewInit, AfterContentInit, OnChanges
+{
+  @Input({ required: true }) columns: Array<DataTableColumn<T>> = [];
+  @Input() rows: T[] = [];
   @Input() pageSize = 50;
   @Input() pageSizeOptions: number[] = [10, 25, 50, 100];
   @Input() filter = '';
   @Input() filterKeys: string[] = [];
+  @Input() ariaLabel = 'Tabela';
+  @Input() paginatorAriaLabel = 'Paginação';
+  @Input() loading = false;
+  @Input() error: string | null = null;
+  @Input() emptyText = 'Nenhum registro encontrado.';
+  @Input() noResultsText = 'Nenhum resultado para o filtro.';
+  @Input() errorText = 'Ocorreu um erro ao carregar os dados.';
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
   @ContentChildren(DataTableCellDefDirective) cellTemplates!: QueryList<DataTableCellDefDirective>;
 
-  readonly dataSource = new MatTableDataSource<unknown>([]);
+  readonly dataSource = new MatTableDataSource<T>([]);
   private templateMap = new Map<string, TemplateRef<unknown>>();
 
   ngAfterViewInit(): void {
@@ -46,6 +55,26 @@ export class DataTableComponent implements AfterViewInit, AfterContentInit, OnCh
     return (this.columns || []).map((c) => c.key);
   }
 
+  get isFiltered(): boolean {
+    return Boolean((this.filter || '').trim());
+  }
+
+  get hasFilteredRows(): boolean {
+    return (this.dataSource.filteredData?.length ?? 0) > 0;
+  }
+
+  get showTable(): boolean {
+    return !this.loading && !this.error && this.hasFilteredRows;
+  }
+
+  get showEmptyState(): boolean {
+    return !this.loading && !this.error && !this.isFiltered && (this.rows?.length ?? 0) === 0;
+  }
+
+  get showNoResultsState(): boolean {
+    return !this.loading && !this.error && this.isFiltered && !this.hasFilteredRows;
+  }
+
   getCellTemplate(key: string): TemplateRef<unknown> | null {
     if (!this.templateMap.size && this.cellTemplates) {
       // lazy init in case content templates come after inputs
@@ -59,7 +88,7 @@ export class DataTableComponent implements AfterViewInit, AfterContentInit, OnCh
     this.cellTemplates?.changes?.subscribe(() => this.rebuildTemplateMap());
   }
 
-  headerAlignClass(col: DataTableColumn): string {
+  headerAlignClass(col: DataTableColumn<T>): string {
     if (col.align === 'right') return 'text-right';
     if (col.align === 'center') return 'text-center';
     return 'text-left';
@@ -80,12 +109,12 @@ export class DataTableComponent implements AfterViewInit, AfterContentInit, OnCh
   }
 
   private applySortingAccessor(): void {
-    const accessors = new Map<string, NonNullable<NonNullable<DataTableColumn['sortAccessor']>>>();
+    const accessors = new Map<string, NonNullable<NonNullable<DataTableColumn<T>['sortAccessor']>>>();
     (this.columns || []).forEach((c) => {
       if (c.sortAccessor) accessors.set(c.key, c.sortAccessor);
     });
 
-    this.dataSource.sortingDataAccessor = (row: unknown, sortHeaderId: string) => {
+    this.dataSource.sortingDataAccessor = (row: T, sortHeaderId: string) => {
       const accessor = accessors.get(sortHeaderId);
       if (accessor) return accessor(row);
       const v = this.getValue(row, sortHeaderId);
@@ -101,9 +130,14 @@ export class DataTableComponent implements AfterViewInit, AfterContentInit, OnCh
     this.templateMap = map;
   }
 
-  getValue(row: unknown, key: string): unknown {
-    if (!row || typeof row !== 'object') return undefined;
-    return (row as Record<string, unknown>)[key];
+  getValue<K extends keyof T & string>(row: T, key: K): T[K];
+  getValue(row: T, key: string): unknown;
+  getValue(row: T, key: string): unknown {
+    if (!row) return undefined;
+    if (Object.prototype.hasOwnProperty.call(row, key)) {
+      return row[key as keyof T];
+    }
+    return undefined;
   }
 }
 
