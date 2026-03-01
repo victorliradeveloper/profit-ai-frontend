@@ -48,6 +48,7 @@ export class ColumnResizeDirective implements OnDestroy {
     try {
       this.el.nativeElement.setPointerCapture(event.pointerId);
     } catch {
+      void 0;
     }
 
     this.startX = event.clientX;
@@ -81,6 +82,7 @@ export class ColumnResizeDirective implements OnDestroy {
       try {
         this.el.nativeElement.releasePointerCapture(this.activePointerId);
       } catch {
+        void 0;
       }
     }
     this.activePointerId = null;
