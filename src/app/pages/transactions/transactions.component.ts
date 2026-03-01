@@ -25,7 +25,7 @@ import { TransactionRow } from './components/table/table.types';
 export class TransactionsComponent {
   readonly monthLabel = 'Fevereiro 2026';
 
-  readonly columns: DataTableColumn[] = [
+  readonly columns: Array<DataTableColumn<TransactionRow>> = [
     { key: 'status', header: 'Situação', sortable: false, resizable: false },
     {
       key: 'date',
@@ -33,8 +33,7 @@ export class TransactionsComponent {
       sortable: true,
       resizable: true,
       sortAccessor: (row) => {
-        const v = (row as Record<string, unknown>)?.['date'];
-        if (typeof v !== 'string') return '';
+        const v = row.date;
         const [dd, mm, yyyy] = v.split('/').map((x) => Number(x));
         if (!dd || !mm || !yyyy) return v;
         return new Date(yyyy, mm - 1, dd).getTime();

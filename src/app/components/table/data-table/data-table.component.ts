@@ -14,9 +14,11 @@ import { DataTableColumn } from './data-table.types';
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.scss',
 })
-export class DataTableComponent implements AfterViewInit, AfterContentInit, OnChanges {
-  @Input({ required: true }) columns: DataTableColumn[] = [];
-  @Input() rows: unknown[] = [];
+export class DataTableComponent<T extends Record<string, unknown> = Record<string, unknown>>
+  implements AfterViewInit, AfterContentInit, OnChanges
+{
+  @Input({ required: true }) columns: Array<DataTableColumn<T>> = [];
+  @Input() rows: T[] = [];
   @Input() pageSize = 50;
   @Input() pageSizeOptions: number[] = [10, 25, 50, 100];
   @Input() filter = '';
@@ -27,7 +29,7 @@ export class DataTableComponent implements AfterViewInit, AfterContentInit, OnCh
 
   @ContentChildren(DataTableCellDefDirective) cellTemplates!: QueryList<DataTableCellDefDirective>;
 
-  readonly dataSource = new MatTableDataSource<unknown>([]);
+  readonly dataSource = new MatTableDataSource<T>([]);
   private templateMap = new Map<string, TemplateRef<unknown>>();
 
   ngAfterViewInit(): void {
@@ -59,7 +61,7 @@ export class DataTableComponent implements AfterViewInit, AfterContentInit, OnCh
     this.cellTemplates?.changes?.subscribe(() => this.rebuildTemplateMap());
   }
 
-  headerAlignClass(col: DataTableColumn): string {
+  headerAlignClass(col: DataTableColumn<T>): string {
     if (col.align === 'right') return 'text-right';
     if (col.align === 'center') return 'text-center';
     return 'text-left';
@@ -80,12 +82,12 @@ export class DataTableComponent implements AfterViewInit, AfterContentInit, OnCh
   }
 
   private applySortingAccessor(): void {
-    const accessors = new Map<string, NonNullable<NonNullable<DataTableColumn['sortAccessor']>>>();
+    const accessors = new Map<string, NonNullable<NonNullable<DataTableColumn<T>['sortAccessor']>>>();
     (this.columns || []).forEach((c) => {
       if (c.sortAccessor) accessors.set(c.key, c.sortAccessor);
     });
 
-    this.dataSource.sortingDataAccessor = (row: unknown, sortHeaderId: string) => {
+    this.dataSource.sortingDataAccessor = (row: T, sortHeaderId: string) => {
       const accessor = accessors.get(sortHeaderId);
       if (accessor) return accessor(row);
       const v = this.getValue(row, sortHeaderId);
@@ -101,9 +103,14 @@ export class DataTableComponent implements AfterViewInit, AfterContentInit, OnCh
     this.templateMap = map;
   }
 
-  getValue(row: unknown, key: string): unknown {
-    if (!row || typeof row !== 'object') return undefined;
-    return (row as Record<string, unknown>)[key];
+  getValue<K extends keyof T & string>(row: T, key: K): T[K];
+  getValue(row: T, key: string): unknown;
+  getValue(row: T, key: string): unknown {
+    if (!row) return undefined;
+    if (Object.prototype.hasOwnProperty.call(row, key)) {
+      return row[key as keyof T];
+    }
+    return undefined;
   }
 }
 

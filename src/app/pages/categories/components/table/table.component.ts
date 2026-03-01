@@ -20,7 +20,7 @@ export class CategoriesTableComponent {
 
   @Output() rowAction = new EventEmitter<{ action: 'details' | 'edit' | 'archive'; row: CategoryRow }>();
 
-  readonly columns: DataTableColumn[] = [
+  readonly columns: Array<DataTableColumn<CategoryRow>> = [
     { key: 'name', header: 'Nome', sortable: true, resizable: true },
     { key: 'icon', header: 'Ícone', sortable: false, resizable: true },
     { key: 'color', header: 'Cor', sortable: false, resizable: true },

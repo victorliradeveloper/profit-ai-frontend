@@ -25,7 +25,7 @@ import { TransactionRow } from './table.types';
 })
 export class TransactionsTableComponent {
   @Input() monthLabel = '';
-  @Input() columns: DataTableColumn[] = [];
+  @Input() columns: Array<DataTableColumn<TransactionRow>> = [];
   @Input() rows: TransactionRow[] = [];
   @Input() projectedDayEndBalance = 'R$ 0,00';
 
