@@ -5,9 +5,6 @@ import { Directive, ElementRef, HostListener, Input, OnDestroy, Renderer2 } from
   standalone: true,
 })
 export class ColumnResizeDirective implements OnDestroy {
-  /**
-   * Column key from matColumnDef, e.g. "name" => class ".mat-column-name"
-   */
   @Input('appColumnResize') columnKey!: string;
 
   @Input() minWidthPx = 80;
@@ -15,49 +12,78 @@ export class ColumnResizeDirective implements OnDestroy {
 
   private startX = 0;
   private startWidth = 0;
+  private activePointerId: number | null = null;
   private removeMoveListener?: () => void;
   private removeUpListener?: () => void;
+  private removeCancelListener?: () => void;
+  private removeLostCaptureListener?: () => void;
 
   constructor(
     private el: ElementRef<HTMLElement>,
     private renderer: Renderer2,
-  ) {}
-
-  ngOnDestroy(): void {
-    this.teardownListeners();
+  ) {
+    this.renderer.setStyle(this.el.nativeElement, 'touch-action', 'none');
   }
 
-  @HostListener('mousedown', ['$event'])
-  onMouseDown(event: MouseEvent): void {
+  ngOnDestroy(): void {
+    this.onEnd();
+  }
+
+  @HostListener('pointerdown', ['$event'])
+  onPointerDown(event: PointerEvent): void {
     if (!this.columnKey) return;
+    if (event.button !== 0) return;
 
     event.preventDefault();
     event.stopPropagation();
+
+    if (this.activePointerId !== null) this.onEnd();
 
     const headerCell = this.getHeaderCell();
     const table = this.getTable();
     if (!headerCell || !table) return;
 
+    this.activePointerId = event.pointerId;
+
+    try {
+      this.el.nativeElement.setPointerCapture(event.pointerId);
+    } catch {
+    }
+
     this.startX = event.clientX;
     this.startWidth = headerCell.getBoundingClientRect().width;
 
-    // UX: prevent text selection while dragging
     this.renderer.addClass(document.body, 'select-none');
     this.renderer.setStyle(document.body, 'cursor', 'col-resize');
 
-    this.removeMoveListener = this.renderer.listen('document', 'mousemove', (e: MouseEvent) =>
-      this.onMouseMove(e, table),
+    this.removeMoveListener = this.renderer.listen(this.el.nativeElement, 'pointermove', (e: PointerEvent) =>
+      this.onPointerMove(e, table),
     );
-    this.removeUpListener = this.renderer.listen('document', 'mouseup', () => this.onMouseUp());
+    this.removeUpListener = this.renderer.listen(this.el.nativeElement, 'pointerup', (e: PointerEvent) => this.onPointerUp(e));
+    this.removeCancelListener = this.renderer.listen(this.el.nativeElement, 'pointercancel', (e: PointerEvent) => this.onPointerUp(e));
+    this.removeLostCaptureListener = this.renderer.listen(this.el.nativeElement, 'lostpointercapture', () => this.onEnd());
   }
 
-  private onMouseMove(event: MouseEvent, table: HTMLElement): void {
+  private onPointerMove(event: PointerEvent, table: HTMLElement): void {
+    if (this.activePointerId !== null && event.pointerId !== this.activePointerId) return;
     const deltaX = event.clientX - this.startX;
-    const next = this.clamp(this.startWidth + deltaX, this.minWidthPx, this.maxWidthPx);
+    const next = this.clamp(Math.round(this.startWidth + deltaX), this.minWidthPx, this.maxWidthPx);
     this.applyWidthPx(table, this.columnKey, next);
   }
 
-  private onMouseUp(): void {
+  private onPointerUp(event: PointerEvent): void {
+    if (this.activePointerId !== null && event.pointerId !== this.activePointerId) return;
+    this.onEnd();
+  }
+
+  private onEnd(): void {
+    if (this.activePointerId !== null) {
+      try {
+        this.el.nativeElement.releasePointerCapture(this.activePointerId);
+      } catch {
+      }
+    }
+    this.activePointerId = null;
     this.renderer.removeClass(document.body, 'select-none');
     this.renderer.removeStyle(document.body, 'cursor');
     this.teardownListeners();
@@ -66,18 +92,21 @@ export class ColumnResizeDirective implements OnDestroy {
   private teardownListeners(): void {
     if (this.removeMoveListener) this.removeMoveListener();
     if (this.removeUpListener) this.removeUpListener();
+    if (this.removeCancelListener) this.removeCancelListener();
+    if (this.removeLostCaptureListener) this.removeLostCaptureListener();
     this.removeMoveListener = undefined;
     this.removeUpListener = undefined;
+    this.removeCancelListener = undefined;
+    this.removeLostCaptureListener = undefined;
   }
 
   private applyWidthPx(table: HTMLElement, columnKey: string, widthPx: number): void {
-    // MatTable cells include .mat-column-<key> (and sometimes .cdk-column-<key>)
     const selector = `.mat-column-${CSS.escape(columnKey)}, .cdk-column-${CSS.escape(columnKey)}`;
     const nodes = table.querySelectorAll<HTMLElement>(selector);
     nodes.forEach((node) => {
-      node.style.width = `${widthPx}px`;
-      node.style.minWidth = `${widthPx}px`;
-      node.style.maxWidth = `${widthPx}px`;
+      this.renderer.setStyle(node, 'width', `${widthPx}px`);
+      this.renderer.setStyle(node, 'min-width', `${widthPx}px`);
+      this.renderer.setStyle(node, 'max-width', `${widthPx}px`);
     });
   }
 
