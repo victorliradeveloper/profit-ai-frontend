@@ -25,6 +25,11 @@ export class DataTableComponent<T extends Record<string, unknown> = Record<strin
   @Input() filterKeys: string[] = [];
   @Input() ariaLabel = 'Tabela';
   @Input() paginatorAriaLabel = 'Paginação';
+  @Input() loading = false;
+  @Input() error: string | null = null;
+  @Input() emptyText = 'Nenhum registro encontrado.';
+  @Input() noResultsText = 'Nenhum resultado para o filtro.';
+  @Input() errorText = 'Ocorreu um erro ao carregar os dados.';
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -48,6 +53,26 @@ export class DataTableComponent<T extends Record<string, unknown> = Record<strin
 
   get displayedColumns(): string[] {
     return (this.columns || []).map((c) => c.key);
+  }
+
+  get isFiltered(): boolean {
+    return Boolean((this.filter || '').trim());
+  }
+
+  get hasFilteredRows(): boolean {
+    return (this.dataSource.filteredData?.length ?? 0) > 0;
+  }
+
+  get showTable(): boolean {
+    return !this.loading && !this.error && this.hasFilteredRows;
+  }
+
+  get showEmptyState(): boolean {
+    return !this.loading && !this.error && !this.isFiltered && (this.rows?.length ?? 0) === 0;
+  }
+
+  get showNoResultsState(): boolean {
+    return !this.loading && !this.error && this.isFiltered && !this.hasFilteredRows;
   }
 
   getCellTemplate(key: string): TemplateRef<unknown> | null {
