@@ -23,6 +23,8 @@ export class DataTableComponent<T extends Record<string, unknown> = Record<strin
   @Input() pageSizeOptions: number[] = [10, 25, 50, 100];
   @Input() filter = '';
   @Input() filterKeys: string[] = [];
+  @Input() ariaLabel = 'Tabela';
+  @Input() paginatorAriaLabel = 'Paginação';
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;

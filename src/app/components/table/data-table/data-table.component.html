@@ -1,6 +1,12 @@
 <div class="rounded-2xl overflow-hidden bg-[#2c2c2e] border border-white/10">
   <div class="overflow-x-auto">
-    <table mat-table [dataSource]="dataSource" matSort class="w-full !bg-transparent table-fixed">
+    <table
+      mat-table
+      [dataSource]="dataSource"
+      matSort
+      class="w-full !bg-transparent table-fixed"
+      [attr.aria-label]="ariaLabel"
+    >
       <ng-container *ngFor="let col of columns" [matColumnDef]="col.key">
         <th
           mat-header-cell
@@ -42,6 +48,7 @@
       [pageSize]="pageSize"
       [pageSizeOptions]="pageSizeOptions"
       showFirstLastButtons
+      [attr.aria-label]="paginatorAriaLabel"
     ></mat-paginator>
   </div>
 </div>
