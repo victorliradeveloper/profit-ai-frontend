@@ -1,0 +1,18 @@
+:host {
+  /* Keep this scoped to the sidebar only */
+}
+
+:host .sidebar-nav-item {
+  padding-left: 20px;
+}
+
+:host a.mat-mdc-list-item.active {
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 12px;
+}
+
+:host a.mat-mdc-list-item.active mat-icon,
+:host a.mat-mdc-list-item.active [matListItemTitle] {
+  color: #ffffff;
+}
+
