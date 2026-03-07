@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { IsActiveMatchOptions, RouterModule } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
@@ -10,6 +10,12 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { AuthStateService } from '../../services/auth/auth-state.service';
 import { SidebarService } from '../../services/layout/sidebar.service';
+
+type SidebarNavItem = {
+  label: string;
+  icon: string;
+  link: string;
+};
 
 @Component({
   selector: 'app-sidebar',
@@ -23,6 +29,7 @@ import { SidebarService } from '../../services/layout/sidebar.service';
     MatMenuModule,
   ],
   templateUrl: './sidebar.component.html',
+  styleUrl: './sidebar.component.scss',
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   isAuthenticated = false;
@@ -30,6 +37,21 @@ export class SidebarComponent implements OnInit, OnDestroy {
   sidenavMode: 'side' | 'over' = 'side';
   opened = true;
   readonly sidenavWidthPx = 280;
+  readonly navItems: SidebarNavItem[] = [
+    { label: 'Dashboard', icon: 'home', link: '/' },
+    { label: 'Planejamento', icon: 'event_note', link: '/planejamento' },
+    { label: 'Transações', icon: 'receipt_long', link: '/transacoes' },
+    { label: 'Relatórios', icon: 'pie_chart', link: '/relatorios' },
+    { label: 'Assistente IA', icon: 'smart_toy', link: '/assistente' },
+    { label: 'Categorias', icon: 'input', link: '/categorias' },
+    { label: 'Configurações', icon: 'settings', link: '/configuracoes' },
+  ];
+  readonly navLinkActiveOptions: IsActiveMatchOptions = {
+    paths: 'exact',
+    queryParams: 'ignored',
+    fragment: 'ignored',
+    matrixParams: 'ignored',
+  };
   private readonly destroy$ = new Subject<void>();
 
   get fixedTopGapPx(): number {
