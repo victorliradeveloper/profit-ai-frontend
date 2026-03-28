@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { DataTableColumn } from '../../components/table/data-table/data-table.types';
 import { TableToolbarComponent } from '../../components/table/toolbar/table-toolbar.component';
 import { TransactionsFiltersComponent } from './components/transactions-filters/transactions-filters.component';
+import { TransactionsMonthSwitchComponent } from './components/transactions-month-switch/transactions-month-switch.component';
 import { TransactionsSummaryCardsComponent } from './components/transactions-summary-cards/transactions-summary-cards.component';
 import { TransactionsTableComponent } from './components/table/table.component';
 import { TransactionRow } from './components/table/table.types';
@@ -17,6 +18,7 @@ import { TransactionsDataService } from '../../services/transactions/transaction
     MatIconModule,
     TableToolbarComponent,
     TransactionsFiltersComponent,
+    TransactionsMonthSwitchComponent,
     TransactionsSummaryCardsComponent,
     TransactionsTableComponent,
   ],
