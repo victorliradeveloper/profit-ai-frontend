@@ -18,12 +18,11 @@
     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6">
       <!-- Left: table -->
       <div class="space-y-4 min-w-0">
-        <app-transactions-month-switch
+        <app-month-switch
           class="block"
-          [label]="monthLabel"
-          (prev)="prevMonth()"
-          (next)="nextMonth()"
-        ></app-transactions-month-switch>
+          [month]="currentMonth"
+          (monthChange)="currentMonth = $event"
+        ></app-month-switch>
 
         <app-transactions-table
           class="block"
