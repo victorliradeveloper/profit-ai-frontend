@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { DataTableColumn } from '../../components/table/data-table/data-table.types';
 import { TableToolbarComponent } from '../../components/table/toolbar/table-toolbar.component';
+import { MonthSwitchComponent } from '../../components/month-switch/month-switch.component';
 import { TransactionsFiltersComponent } from './components/transactions-filters/transactions-filters.component';
 import { TransactionsSummaryCardsComponent } from './components/transactions-summary-cards/transactions-summary-cards.component';
 import { TransactionsTableComponent } from './components/table/table.component';
@@ -17,6 +18,7 @@ import { TransactionsDataService } from '../../services/transactions/transaction
     MatIconModule,
     TableToolbarComponent,
     TransactionsFiltersComponent,
+    MonthSwitchComponent,
     TransactionsSummaryCardsComponent,
     TransactionsTableComponent,
   ],
@@ -25,7 +27,7 @@ import { TransactionsDataService } from '../../services/transactions/transaction
 export class TransactionsComponent {
   private readonly data = inject(TransactionsDataService);
 
-  readonly monthLabel = 'Fevereiro 2026';
+  currentMonth = new Date();
 
   readonly columns: Array<DataTableColumn<TransactionRow>> = [
     { key: 'status', header: 'Situação', sortable: false, resizable: false },
@@ -52,12 +54,6 @@ export class TransactionsComponent {
   readonly projectedDayEndBalance = this.data.projectedDayEndBalance;
 
   onExport(): void {
-  }
-
-  prevMonth(): void {
-  }
-
-  nextMonth(): void {
   }
 }
 

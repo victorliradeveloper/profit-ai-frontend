@@ -1,11 +1,4 @@
 <div class="space-y-4">
-  <app-transactions-month-switch
-    class="block"
-    [label]="monthLabel"
-    (prev)="prevMonth.emit()"
-    (next)="nextMonth.emit()"
-  ></app-transactions-month-switch>
-
   <app-data-table
     class="block"
     ariaLabel="Tabela de transações"

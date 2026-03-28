@@ -1,0 +1,42 @@
+<form class="px-10 pt-8 pb-7 w-[min(820px,calc(100vw-2rem))]" (submit)="$event.preventDefault(); save()">
+  <div class="flex items-start justify-between gap-6">
+    <div class="text-[28px] font-semibold leading-tight">Editar categoria</div>
+
+    <button
+      type="button"
+      mat-icon-button
+      class="text-white/70 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+      aria-label="Fechar"
+      (click)="cancel()"
+    >
+      <mat-icon aria-hidden="true">close</mat-icon>
+    </button>
+  </div>
+
+  <div class="mt-8">
+    <input
+      [formControl]="nameControl"
+      maxlength="60"
+      autofocus
+      class="w-full bg-transparent text-white text-[20px] leading-[28px] py-3 outline-none border-0 border-b border-white/30 focus:border-white/60"
+    />
+  </div>
+
+  <div class="mt-8 flex items-center justify-end gap-3">
+    <button
+      type="button"
+      class="h-10 px-5 rounded-full text-white/70 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+      (click)="cancel()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      class="h-10 px-6 rounded-full bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+      [disabled]="nameControl.invalid"
+    >
+      Salvar
+    </button>
+  </div>
+</form>
+

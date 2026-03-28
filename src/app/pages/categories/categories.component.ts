@@ -1,14 +1,20 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { take } from 'rxjs';
 import { TableToolbarComponent } from '../../components/table/toolbar/table-toolbar.component';
 import { CategoriesTableComponent } from './components/table/table.component';
 import { CategoryRow } from './components/table/table.types';
 import { CategoriesDataService, CategoryType } from '../../services/categories/categories-data.service';
+import {
+  EditCategoryNameModalComponent,
+  EditCategoryNameModalResult,
+} from './components/modal/modal.component';
 
 @Component({
   selector: 'app-categories',
@@ -16,6 +22,7 @@ import { CategoriesDataService, CategoryType } from '../../services/categories/c
   imports: [
     CommonModule,
     MatButtonModule,
+    MatDialogModule,
     MatIconModule,
     MatInputModule,
     MatMenuModule,
@@ -27,6 +34,7 @@ import { CategoriesDataService, CategoryType } from '../../services/categories/c
 })
 export class CategoriesComponent {
   private readonly data = inject(CategoriesDataService);
+  private readonly dialog = inject(MatDialog);
 
   selectedCategoryType: CategoryType = 'despesa';
   showSearch = false;
@@ -52,8 +60,26 @@ export class CategoriesComponent {
   }
 
   onRowAction(action: 'details' | 'edit' | 'archive', row: CategoryRow): void {
-    void action;
-    void row;
+    if (action === 'edit') this.openEditNameModal(row);
+  }
+
+  private openEditNameModal(row: CategoryRow): void {
+    const ref = this.dialog.open<EditCategoryNameModalComponent, { name: string }, EditCategoryNameModalResult>(
+      EditCategoryNameModalComponent,
+      {
+        data: { name: row.name },
+        panelClass: 'edit-category-name-modal',
+        autoFocus: false,
+      },
+    );
+
+    ref
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((result) => {
+        if (!result) return;
+        this.rows = this.rows.map((r) => (r.id === row.id ? { ...r, name: result.name } : r));
+      });
   }
 
   get categoryTypeLabel(): string {
