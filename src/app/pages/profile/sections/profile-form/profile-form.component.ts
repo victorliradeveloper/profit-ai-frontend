@@ -1,90 +1,109 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { finalize } from 'rxjs';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { finalize, map, merge, startWith } from 'rxjs';
+
+import { ApiErrorService } from '../../../../services/http/api-error.service';
 import { AuthService } from '../../../../services/auth/auth.service';
+import type { UpdateProfileResponse } from '../../../../services/auth/auth.types';
+import { LoggerService } from '../../../../services/logger/logger.service';
 import { ProfileSessionService } from '../../../../services/profile/profile-session.service';
 import { ProfileStateService } from '../../../../services/profile/profile-state.service';
-import { LoggerService } from '../../../../services/logger/logger.service';
-import { ApiErrorService } from '../../../../services/http/api-error.service';
-import { UpdateProfileResponse } from '../../../../services/auth/auth.types';
+import {
+  profileEmailFieldMessages,
+  profileInvalidFormSummaryMessage,
+  profileNameFieldMessages,
+} from './profile-form-messages';
+import type { ProfileFormControls, ProfileFormData } from './profile-form.types';
 
 @Component({
   selector: 'app-profile-form',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './profile-form.component.html'
+  templateUrl: './profile-form.component.html',
 })
-export class ProfileFormComponent implements OnInit, OnDestroy {
-  userName: string | null = null;
-  userEmail: string | null = null;
-
-  isEditing: boolean = false;
-  isLoading: boolean = false;
-  submitAttempted: boolean = false;
-
+export class ProfileFormComponent implements OnInit {
+  // --- Constants ---
   private readonly MIN_NAME_LENGTH = 2;
 
-  readonly form = this.fb.group({
-    name: ['', [Validators.required, Validators.minLength(this.MIN_NAME_LENGTH)]],
-    email: ['', [Validators.required, Validators.email]]
+  // --- Injected services ---
+  private readonly authService = inject(AuthService);
+  private readonly profileSession = inject(ProfileSessionService);
+  private readonly profileState = inject(ProfileStateService);
+  private readonly logger = inject(LoggerService);
+  private readonly apiError = inject(ApiErrorService);
+  private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
+
+  // --- UI state ---
+  private readonly userProfile = signal<ProfileFormData | null>(null);
+  isEditing = false;
+  submitAttempted = false;
+  readonly isLoading = signal(false);
+
+  // --- Form + reactive bridge (computed does not track FormControl values) ---
+  readonly form = this.createForm();
+
+  private readonly formValidityTick = toSignal(
+    merge(this.form.valueChanges, this.form.statusChanges).pipe(
+      map(() => undefined),
+      startWith(undefined),
+    ),
+    { initialValue: undefined },
+  );
+
+  // --- Computed ---
+  readonly hasChanges = computed(() => {
+    this.formValidityTick();
+    const formValue = this.form.getRawValue();
+    const profile = this.userProfile();
+    if (!profile) return false;
+    return (
+      formValue.name.trim() !== profile.name || formValue.email.trim() !== profile.email
+    );
   });
 
-  constructor(
-    private authService: AuthService,
-    private profileSession: ProfileSessionService,
-    public profileState: ProfileStateService,
-    private logger: LoggerService,
-    private apiError: ApiErrorService,
-    private fb: FormBuilder
-  ) {}
+  readonly canSave = computed(() => {
+    this.formValidityTick();
+    return this.form.valid && this.hasChanges() && !this.isLoading();
+  });
+
+  readonly nameControl = this.form.controls.name;
+  readonly emailControl = this.form.controls.email;
 
   ngOnInit(): void {
-    this.loadUserData();
+    this.loadUserProfile();
   }
 
-  ngOnDestroy(): void {
-    this.profileState.destroy();
-  }
-
-  private loadUserData(): void {
-    this.userName = this.authService.getUserName();
-    this.userEmail = this.authService.getUserEmail();
-    this.resetFormFields();
-  }
-
-  private resetFormFields(): void {
-    this.form.reset(
-      {
-        name: this.userName || '',
-        email: this.userEmail || ''
-      },
-      { emitEvent: false }
-    );
-    this.form.markAsPristine();
-    this.form.markAsUntouched();
-    this.submitAttempted = false;
-  }
-
+  // --- Public API ---
   startEditing(): void {
     this.isEditing = true;
-    this.resetFormFields();
+    this.resetForm();
     this.profileState.clear();
   }
 
   cancelEditing(): void {
     this.isEditing = false;
-    this.resetFormFields();
+    this.resetForm();
     this.profileState.clear();
   }
 
   saveProfile(): void {
     this.submitAttempted = true;
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      const msg = this.validationMessage();
-      this.profileState.setError(msg);
+      this.profileState.setError(
+        profileInvalidFormSummaryMessage(this.MIN_NAME_LENGTH, this.nameControl, this.emailControl),
+      );
       return;
     }
 
@@ -93,72 +112,116 @@ export class ProfileFormComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.isLoading = true;
-    this.profileState.clear();
-
-    const value = this.form.getRawValue();
-    const profileData = {
-      name: value.name!.trim(),
-      email: value.email!.trim()
-    };
-
-    this.authService.updateProfile(profileData).pipe(
-      finalize(() => {
-        this.isLoading = false;
-      })
-    ).subscribe({
-      next: (response: UpdateProfileResponse) => {
-        this.userName = response.name || profileData.name;
-        this.userEmail = response.email || profileData.email;
-        this.isEditing = false;
-        this.resetFormFields();
-        this.profileState.setSuccess('Perfil atualizado com sucesso!');
-      },
-      error: (error: HttpErrorResponse) => {
-        this.handleUpdateError(error);
-      }
-    });
+    this.executeSave();
   }
 
   logout(): void {
     this.profileSession.logoutToLogin();
   }
 
-  private hasChanges(): boolean {
-    const value = this.form.getRawValue();
-    const nameChanged = (value.name || '').trim() !== (this.userName || '');
-    const emailChanged = (value.email || '').trim() !== (this.userEmail || '');
-    return nameChanged || emailChanged;
+  // --- Template helpers ---
+  get nameError(): string | null {
+    return this.fieldError(this.nameControl, profileNameFieldMessages(this.MIN_NAME_LENGTH));
   }
 
-  get nameControl() {
-    return this.form.controls.name;
+  get emailError(): string | null {
+    return this.fieldError(this.emailControl, profileEmailFieldMessages());
   }
 
-  get emailControl() {
-    return this.form.controls.email;
+  get userName(): string {
+    return this.userProfile()?.name ?? '';
   }
 
-  private validationMessage(): string {
-    if (this.nameControl.errors?.['required']) return 'O nome é obrigatório';
-    if (this.nameControl.errors?.['minlength']) return `O nome deve ter pelo menos ${this.MIN_NAME_LENGTH} caracteres`;
-    if (this.emailControl.errors?.['required']) return 'O email é obrigatório';
-    if (this.emailControl.errors?.['email']) return 'Por favor, insira um email válido';
-    return 'Dados inválidos. Verifique as informações.';
+  get userEmail(): string {
+    return this.userProfile()?.email ?? '';
+  }
+
+  // --- Form factory ---
+  private createForm(): FormGroup<ProfileFormControls> {
+    return this.fb.group({
+      name: this.fb.nonNullable.control('', [
+        Validators.required,
+        Validators.minLength(this.MIN_NAME_LENGTH),
+      ]),
+      email: this.fb.nonNullable.control('', [Validators.required, Validators.email]),
+    });
+  }
+
+  // --- Load / reset ---
+  private loadUserProfile(): void {
+    const profile: ProfileFormData = {
+      name: this.authService.getUserName() || '',
+      email: this.authService.getUserEmail() || '',
+    };
+    this.userProfile.set(profile);
+    this.resetForm();
+  }
+
+  private resetForm(): void {
+    const profile = this.userProfile();
+    if (profile) {
+      this.form.reset(profile, { emitEvent: false });
+    }
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
+    this.submitAttempted = false;
+  }
+
+  // --- Save flow ---
+  private executeSave(): void {
+    const formValue = this.form.getRawValue();
+    const profileData: ProfileFormData = {
+      name: formValue.name.trim(),
+      email: formValue.email.trim(),
+    };
+
+    this.isLoading.set(true);
+    this.profileState.clear();
+
+    this.authService
+      .updateProfile(profileData)
+      .pipe(finalize(() => this.isLoading.set(false)), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response: UpdateProfileResponse) => {
+          this.userProfile.set({
+            name: response.name || profileData.name,
+            email: response.email || profileData.email,
+          });
+          this.isEditing = false;
+          this.resetForm();
+          this.profileState.setSuccess('Perfil atualizado com sucesso!');
+        },
+        error: (error: HttpErrorResponse) => this.handleUpdateError(error),
+      });
   }
 
   private handleUpdateError(error: HttpErrorResponse): void {
     if (this.apiError.isUnauthorized(error)) {
-      this.profileState.setError('Sessão expirada. Por favor, faça login novamente.');
+      this.profileState.setError('Sessão expirada. Faça login novamente.');
       this.profileSession.scheduleLogoutToLogin();
       return;
     }
 
-    this.profileState.setError(this.apiError.message(error, {
-      conflict: 'Este email já está em uso. Por favor, escolha outro.',
-      fallback: 'Erro ao atualizar perfil. Tente novamente.'
-    }));
+    this.profileState.setError(
+      this.apiError.message(error, {
+        conflict: 'Este email já está em uso.',
+        fallback: 'Erro ao atualizar perfil. Tente novamente.',
+      }),
+    );
+
     this.logger.error('Update profile error:', error);
   }
-}
 
+  // --- Field errors ---
+  private fieldError(control: AbstractControl, messages: Record<string, string>): string | null {
+    if (!control.invalid || !this.shouldShowFieldError(control)) return null;
+    for (const [key, message] of Object.entries(messages)) {
+      if (control.hasError(key)) return message;
+    }
+    return null;
+  }
+
+  private shouldShowFieldError(control: AbstractControl): boolean {
+    return this.submitAttempted || control.touched;
+  }
+}
