@@ -1,6 +1,6 @@
 <form class="px-10 pt-8 pb-7 w-[min(820px,calc(100vw-2rem))]" (submit)="$event.preventDefault(); save()">
   <div class="flex items-start justify-between gap-6">
-    <div class="text-[28px] font-semibold leading-tight">Editar categoria</div>
+    <div class="text-[28px] font-semibold leading-tight">{{ data.title ?? 'Editar categoria' }}</div>
 
     <button
       type="button"
@@ -22,7 +22,153 @@
     />
   </div>
 
-  <div class="mt-8 flex items-center justify-end gap-3">
+  <fieldset class="border-0 m-0 p-0 min-w-0 mt-10">
+    <legend
+      id="edit-category-color-legend"
+      class="w-full text-left p-0 mb-3 text-white/90 text-sm font-semibold flex items-center gap-2"
+    >
+      <mat-icon class="!text-[20px] !w-5 !h-5 text-white/80" aria-hidden="true">palette</mat-icon>
+      Cor da categoria
+    </legend>
+
+    <div role="radiogroup" class="flex flex-col gap-4" aria-labelledby="edit-category-color-legend">
+      <div class="flex flex-wrap items-center gap-3">
+        @for (opt of quickColorSwatches; track opt.hex; let i = $index) {
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="selectedColor === opt.hex"
+            [attr.aria-posinset]="colorRadioPosInSet(true, i)"
+            [attr.aria-setsize]="colorRadioSetSize()"
+            [attr.aria-label]="opt.label"
+            (click)="selectColor(opt.hex)"
+            class="relative w-10 h-10 rounded-full shrink-0 border-2 transition-[box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            [style.background]="opt.hex"
+            [class.ring-2]="selectedColor === opt.hex"
+            [class.ring-white]="selectedColor === opt.hex"
+            [class.ring-offset-2]="selectedColor === opt.hex"
+            [class.ring-offset-[#2c2c2e]]="selectedColor === opt.hex"
+          >
+            @if (selectedColor === opt.hex) {
+              <mat-icon
+                class="!absolute !inset-0 !m-auto !text-[18px] !w-[18px] !h-[18px] pointer-events-none"
+                [ngClass]="
+                  isLightHex(opt.hex)
+                    ? 'text-neutral-900 drop-shadow-[0_1px_2px_rgba(255,255,255,0.35)]'
+                    : 'text-white drop-shadow-md'
+                "
+                aria-hidden="true"
+                >check</mat-icon
+              >
+            }
+          </button>
+        }
+        <button
+          type="button"
+          class="h-9 px-4 rounded-full text-xs font-semibold tracking-wide bg-white/12 text-white/85 hover:bg-white/18 border-0 cursor-pointer transition-colors"
+          aria-label="Mostrar mais opções de cor"
+          [attr.aria-controls]="showExtendedColors ? 'edit-category-extended-colors' : null"
+          (click)="showExtendedColors = !showExtendedColors"
+          [attr.aria-expanded]="showExtendedColors"
+        >
+          OUTROS
+        </button>
+      </div>
+
+      @if (showExtendedColors) {
+        <div id="edit-category-extended-colors" class="flex flex-wrap gap-2 pt-1">
+          @for (opt of extendedColorSwatches; track opt.hex; let j = $index) {
+            <button
+              type="button"
+              role="radio"
+              [attr.aria-checked]="selectedColor === opt.hex"
+              [attr.aria-posinset]="colorRadioPosInSet(false, j)"
+              [attr.aria-setsize]="colorRadioSetSize()"
+              [attr.aria-label]="opt.label"
+              (click)="selectColor(opt.hex)"
+              class="relative w-9 h-9 rounded-full shrink-0 border border-white/15 transition-[box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              [style.background]="opt.hex"
+              [class.ring-2]="selectedColor === opt.hex"
+              [class.ring-white]="selectedColor === opt.hex"
+              [class.ring-offset-2]="selectedColor === opt.hex"
+              [class.ring-offset-[#2c2c2e]]="selectedColor === opt.hex"
+            >
+              @if (selectedColor === opt.hex) {
+                <mat-icon
+                  class="!absolute !inset-0 !m-auto !text-[16px] !w-4 !h-4 pointer-events-none"
+                  [ngClass]="
+                    isLightHex(opt.hex)
+                      ? 'text-neutral-900 drop-shadow-[0_1px_2px_rgba(255,255,255,0.35)]'
+                      : 'text-white drop-shadow-md'
+                  "
+                  aria-hidden="true"
+                  >check</mat-icon
+                >
+              }
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </fieldset>
+
+  <fieldset class="border-0 m-0 p-0 min-w-0 mt-8">
+    <legend
+      id="edit-category-icon-legend"
+      class="w-full text-left p-0 mb-3 text-white/90 text-sm font-semibold flex items-center gap-2"
+    >
+      <mat-icon class="!text-[20px] !w-5 !h-5 text-white/80" aria-hidden="true">photo_library</mat-icon>
+      Ícone
+    </legend>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <div role="radiogroup" class="flex flex-wrap gap-3 items-center" aria-labelledby="edit-category-icon-legend">
+        @for (ic of quickIcons; track ic; let k = $index) {
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="!selectedIconOutsideQuick() && selectedIcon === ic"
+            [attr.aria-posinset]="k + 1"
+            [attr.aria-setsize]="iconRadioSetSize()"
+            [attr.aria-label]="quickIconLabel(ic)"
+            (click)="selectedIcon = ic"
+            class="w-11 h-11 rounded-full flex items-center justify-center border-0 cursor-pointer transition-colors"
+            [ngClass]="
+              selectedIcon === ic
+                ? 'bg-white/25 text-white shadow-[inset_0_0_0_2px_rgba(255,255,255,0.45)]'
+                : 'bg-white/10 text-white/90 hover:bg-white/15'
+            "
+          >
+            <mat-icon class="!text-[22px]" aria-hidden="true">{{ ic }}</mat-icon>
+          </button>
+        }
+        @if (selectedIconOutsideQuick()) {
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="true"
+            [attr.aria-posinset]="quickIcons.length + 1"
+            [attr.aria-setsize]="iconRadioSetSize()"
+            aria-label="Ícone atual (fora das sugestões rápidas), abrir galeria completa para alterar"
+            (click)="openFullIconPicker()"
+            class="w-11 h-11 rounded-full flex items-center justify-center border-0 cursor-pointer transition-colors bg-white/25 text-white shadow-[inset_0_0_0_2px_rgba(255,255,255,0.45)] hover:bg-white/30"
+          >
+            <mat-icon class="!text-[22px]" aria-hidden="true">{{ selectedIcon }}</mat-icon>
+          </button>
+        }
+      </div>
+      <button
+        type="button"
+        class="h-9 px-4 rounded-full text-xs font-semibold tracking-wide bg-white/12 text-white/85 hover:bg-white/18 border-0 cursor-pointer transition-colors"
+        aria-label="Abrir galeria completa de ícones"
+        (click)="openFullIconPicker()"
+      >
+        OUTROS
+      </button>
+    </div>
+  </fieldset>
+
+  <div class="mt-10 flex items-center justify-end gap-3">
     <button
       type="button"
       class="h-10 px-5 rounded-full text-white/70 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
@@ -32,11 +178,10 @@
     </button>
     <button
       type="submit"
-      class="h-10 px-6 rounded-full bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+      class="h-10 px-8 rounded-full bg-red-500 hover:bg-red-400 text-white font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed border-0 cursor-pointer transition-colors"
       [disabled]="nameControl.invalid"
     >
-      Salvar
+      SALVAR
     </button>
   </div>
 </form>
-
