@@ -1,45 +1,15 @@
-/* Scoped via MatDialog panelClass: 'edit-category-name-modal' */
-.edit-category-name-modal .mat-mdc-dialog-surface {
+@use '../../styles/category-dialog-scrollbar' as cat-scroll;
+
+/* Scoped via MatDialog panelClass: 'edit-category-modal' */
+.edit-category-modal .mat-mdc-dialog-surface {
   background: #2c2c2e;
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.6);
+  @include cat-scroll.category-dialog-scrollbar(8px);
 }
 
-.edit-category-name-modal .mat-mdc-dialog-content {
+.edit-category-modal .mat-mdc-dialog-content {
   padding: 0;
 }
-
-/* Scrollbar when the dialog surface scrolls (viewport curto) */
-.edit-category-name-modal .mat-mdc-dialog-surface {
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.32) rgba(255, 255, 255, 0.06);
-}
-
-.edit-category-name-modal .mat-mdc-dialog-surface::-webkit-scrollbar {
-  width: 10px;
-}
-
-.edit-category-name-modal .mat-mdc-dialog-surface::-webkit-scrollbar-track {
-  margin: 8px 0;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 999px;
-}
-
-.edit-category-name-modal .mat-mdc-dialog-surface::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-  background-color: rgba(255, 255, 255, 0.22);
-}
-
-.edit-category-name-modal .mat-mdc-dialog-surface::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.38);
-}
-
-.edit-category-name-modal .mat-mdc-dialog-surface::-webkit-scrollbar-thumb:active {
-  background-color: rgba(255, 255, 255, 0.48);
-}
-
