@@ -20,20 +20,20 @@
       <div class="space-y-4 min-w-0">
         <app-month-switch
           class="block"
-          [month]="currentMonth"
-          (monthChange)="currentMonth = $event"
+          [month]="currentMonth()"
+          (monthChange)="onMonthChange($event)"
         ></app-month-switch>
 
         <app-transactions-table
           class="block"
           [columns]="columns"
-          [rows]="rows"
-          [projectedDayEndBalance]="projectedDayEndBalance"
+          [rows]="rows()"
+          [projectedDayEndBalance]="projectedDayEndBalance()"
         ></app-transactions-table>
       </div>
 
       <!-- Right: summary cards -->
-      <app-transactions-summary-cards [cards]="summaryCards"></app-transactions-summary-cards>
+      <app-transactions-summary-cards [cards]="summaryCards()"></app-transactions-summary-cards>
     </div>
   </div>
 </section>

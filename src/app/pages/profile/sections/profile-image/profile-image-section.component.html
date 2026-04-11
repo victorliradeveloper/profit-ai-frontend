@@ -26,13 +26,13 @@
           >
             <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-black/35 flex items-center justify-center">
               <img
-                *ngIf="displayedAvatarUrl; else avatarFallback"
-                [src]="displayedAvatarUrl"
+                *ngIf="displayedAvatarUrl(); else avatarFallback"
+                [src]="displayedAvatarUrl()"
                 alt="Foto do perfil"
                 class="w-full h-full object-cover"
               />
               <ng-template #avatarFallback>
-                <span class="text-2xl sm:text-3xl font-semibold text-white/80">{{ profileInitials }}</span>
+                <span class="text-2xl sm:text-3xl font-semibold text-white/80">{{ profileInitials() }}</span>
               </ng-template>
             </div>
 
@@ -58,7 +58,7 @@
           </button>
 
           <div
-            *ngIf="profileImagePreviewUrl"
+            *ngIf="profileImagePreviewUrl()"
             class="absolute -top-2 -left-2 px-2.5 py-1 rounded-full bg-white/15 text-white/90 text-[11px] font-semibold border border-white/15 backdrop-blur"
           >
             Preview
