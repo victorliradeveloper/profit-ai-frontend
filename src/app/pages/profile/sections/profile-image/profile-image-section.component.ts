@@ -1,208 +1,241 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { finalize, switchMap } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize, switchMap } from 'rxjs';
+
 import { AuthService } from '../../../../services/auth/auth.service';
+import type { AuthProfileResponse } from '../../../../services/auth/auth.types';
+import { ApiErrorService } from '../../../../services/http/api-error.service';
 import { FileTransferService } from '../../../../services/files/file-transfer.service';
 import { LoggerService } from '../../../../services/logger/logger.service';
-import { ApiErrorService } from '../../../../services/http/api-error.service';
+
+const MAX_PROFILE_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
+const PROFILE_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+const SUCCESS_MESSAGE_DURATION = 3000;
+
+type AllowedImageType = (typeof PROFILE_IMAGE_ALLOWED_TYPES)[number];
 
 @Component({
   selector: 'app-profile-image-section',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './profile-image-section.component.html'
+  templateUrl: './profile-image-section.component.html',
 })
-export class ProfileImageSectionComponent implements OnInit, OnDestroy {
-  userName: string | null = null;
-  userEmail: string | null = null;
-  userAvatarUrl: string | null = null;
+export class ProfileImageSectionComponent implements OnInit {
+  private readonly authService = inject(AuthService);
+  private readonly fileTransfer = inject(FileTransferService);
+  private readonly logger = inject(LoggerService);
+  private readonly apiError = inject(ApiErrorService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  profileImagePreviewUrl: string | null = null;
+  private readonly userProfile = signal<{
+    name: string;
+    email: string;
+    avatarKey: string | null;
+  } | null>(null);
+
+  /** Object URLs for preview / persisted avatar (signals so computeds stay in sync). */
+  private readonly previewObjectUrl = signal<string | null>(null);
+  private readonly persistedAvatarObjectUrl = signal<string | null>(null);
+
+  isUploadingProfileImage = false;
   selectedProfileImageFile: File | null = null;
-  isUploadingProfileImage: boolean = false;
-  profileImageErrorMessage: string = '';
-  profileImageSuccessMessage: string = '';
 
-  private readonly MAX_PROFILE_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
-  private readonly PROFILE_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+  profileImageErrorMessage = '';
+  profileImageSuccessMessage = '';
 
-  private profileImagePreviewObjectUrl?: string;
-  private userAvatarObjectUrl?: string;
-  private profileImageMessageTimeout?: ReturnType<typeof setTimeout>;
+  private profileImageMessageTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(
-    private authService: AuthService,
-    private fileTransfer: FileTransferService,
-    private logger: LoggerService,
-    private apiError: ApiErrorService,
-  ) {}
+  readonly profileImagePreviewUrl = computed(() => this.previewObjectUrl());
+  readonly userAvatarUrl = computed(() => this.persistedAvatarObjectUrl());
+  readonly displayedAvatarUrl = computed(
+    () => this.profileImagePreviewUrl() || this.userAvatarUrl(),
+  );
 
-  ngOnInit(): void {
-    this.userName = this.authService.getUserName();
-    this.userEmail = this.authService.getUserEmail();
-    this.authService.getProfile().subscribe({
-      next: (profile) => {
-        this.userName = profile.name;
-        this.userEmail = profile.email;
-        this.loadPersistedAvatar();
-      },
-      error: () => {
-        this.loadPersistedAvatar();
-      }
-    });
+  readonly profileInitials = computed(() => {
+    const profile = this.userProfile();
+    const name = profile?.name?.trim() || '';
+    if (!name) return 'U';
+
+    const parts = name.split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0] ?? '';
+    const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
+    const initials = (first + last).toUpperCase();
+    return initials || 'U';
+  });
+
+  get userName(): string {
+    return this.userProfile()?.name ?? '';
   }
 
-  ngOnDestroy(): void {
-    this.clearProfileImageMessageTimeout();
-    this.revokeProfileImagePreviewObjectUrl();
-    this.revokeUserAvatarObjectUrl();
+  get userEmail(): string {
+    return this.userProfile()?.email ?? '';
   }
-  private revokeUserAvatarObjectUrl(): void {
-    if (this.userAvatarObjectUrl) {
-      URL.revokeObjectURL(this.userAvatarObjectUrl);
-      this.userAvatarObjectUrl = undefined;
+
+  public ngOnInit(): void {
+    this.loadUserProfile();
+  }
+
+  public onSelectProfileImage(event: Event): void {
+    const file = (event.target as HTMLInputElement)?.files?.[0] ?? null;
+    if (!file) return;
+    this.validateAndSetImage(file);
+  }
+
+  public cancelProfileImageSelection(fileInput?: HTMLInputElement): void {
+    this.selectedProfileImageFile = null;
+    this.revokePreviewUrl();
+    this.clearMessages();
+    fileInput?.setAttribute('value', '');
+  }
+
+  public uploadProfileImage(): void {
+    if (!this.selectedProfileImageFile) {
+      this.showError('Selecione uma imagem para enviar.');
+      return;
     }
+    this.executeUpload();
+  }
+
+  private loadUserProfile(): void {
+    this.authService
+      .getProfile()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (profile: AuthProfileResponse) => {
+          this.userProfile.set({
+            name: profile.name || '',
+            email: profile.email || '',
+            avatarKey: profile.avatarKey ?? null,
+          });
+          this.loadPersistedAvatar();
+        },
+        error: () => this.loadPersistedAvatar(),
+      });
   }
 
   private loadPersistedAvatar(): void {
     const avatarKey = this.authService.getUserAvatarKey();
     if (!avatarKey) {
-      this.userAvatarUrl = null;
+      this.revokeUserAvatarUrl();
       return;
     }
 
-    this.fileTransfer.downloadByKey(avatarKey).subscribe({
-      next: (blob) => {
-        this.revokeUserAvatarObjectUrl();
-        this.userAvatarObjectUrl = URL.createObjectURL(blob);
-        this.userAvatarUrl = this.userAvatarObjectUrl;
-      },
-      error: () => {
-        this.userAvatarUrl = null;
-      }
-    });
+    this.fileTransfer
+      .downloadByKey(avatarKey)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob: Blob) => {
+          this.revokeUserAvatarUrl();
+          this.persistedAvatarObjectUrl.set(URL.createObjectURL(blob));
+        },
+        error: () => this.revokeUserAvatarUrl(),
+      });
   }
 
+  private validateAndSetImage(file: File): void {
+    this.clearMessages();
 
-  get profileInitials(): string {
-    const name = (this.userName || '').trim();
-    if (!name) return 'U';
-    const parts = name.split(/\s+/).filter(Boolean);
-    const first = parts[0]?.[0] || '';
-    const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] || '') : '';
-    return (first + last).toUpperCase() || 'U';
-  }
-
-  get displayedAvatarUrl(): string | null {
-    return this.profileImagePreviewUrl || this.userAvatarUrl;
-  }
-
-  onSelectProfileImage(event: Event): void {
-    const input = event.target as HTMLInputElement | null;
-    const file = input?.files?.[0];
-    this.clearProfileImageMessages();
-    if (!file) return;
-
-    if (!this.PROFILE_IMAGE_ALLOWED_TYPES.includes(file.type as (typeof this.PROFILE_IMAGE_ALLOWED_TYPES)[number])) {
-      this.showProfileImageErrorMessage('Formato inválido. Use PNG, JPG ou WEBP.');
-      if (input) input.value = '';
+    if (!PROFILE_IMAGE_ALLOWED_TYPES.includes(file.type as AllowedImageType)) {
+      this.showError('Formato inválido. Use PNG, JPG ou WEBP.');
       return;
     }
 
-    if (file.size > this.MAX_PROFILE_IMAGE_SIZE_BYTES) {
-      this.showProfileImageErrorMessage('Imagem muito grande. Tamanho máximo: 2MB.');
-      if (input) input.value = '';
+    if (file.size > MAX_PROFILE_IMAGE_SIZE_BYTES) {
+      this.showError('Imagem muito grande. Máximo: 2MB.');
       return;
     }
 
     this.selectedProfileImageFile = file;
-    this.revokeProfileImagePreviewObjectUrl();
-    this.profileImagePreviewObjectUrl = URL.createObjectURL(file);
-    this.profileImagePreviewUrl = this.profileImagePreviewObjectUrl;
+    this.revokePreviewUrl();
+    this.previewObjectUrl.set(URL.createObjectURL(file));
+    this.clearInputValue();
 
-    // Allow re-selecting the same file later (otherwise change event may not fire).
-    if (input) input.value = '';
-
-    // Auto-upload on selection.
-    this.uploadProfileImage();
+    this.executeUpload();
   }
 
-  cancelProfileImageSelection(fileInput?: HTMLInputElement): void {
-    this.selectedProfileImageFile = null;
-    this.profileImagePreviewUrl = null;
-    this.revokeProfileImagePreviewObjectUrl();
-    this.clearProfileImageMessages();
-    if (fileInput) fileInput.value = '';
-  }
-
-  uploadProfileImage(): void {
-    if (!this.selectedProfileImageFile) {
-      this.showProfileImageErrorMessage('Selecione uma imagem para enviar.');
-      return;
-    }
+  private executeUpload(): void {
+    const file = this.selectedProfileImageFile;
+    if (!file) return;
 
     this.isUploadingProfileImage = true;
-    this.clearProfileImageMessages();
+    this.clearMessages();
 
-    const file = this.selectedProfileImageFile;
-    this.fileTransfer.uploadAvatar(file).pipe(
-      switchMap((res) => this.authService.updateAvatarKey(res.key)),
-      finalize(() => {
-        this.isUploadingProfileImage = false;
-      })
-    ).subscribe({
-      next: (profile) => {
-        this.authService.setUserAvatarKey(profile.avatarKey || null);
-        this.loadPersistedAvatar();
-
-        this.selectedProfileImageFile = null;
-        this.profileImagePreviewUrl = null;
-        this.revokeProfileImagePreviewObjectUrl();
-        this.showProfileImageSuccessMessage('Foto de perfil atualizada!');
-      },
-      error: (error: HttpErrorResponse) => {
-        this.showProfileImageErrorMessage(this.apiError.message(error, {
-          fallback: 'Erro ao enviar foto. Tente novamente.'
-        }));
-        this.logger.error('Upload profile image error:', error);
-      }
-    });
+    this.fileTransfer
+      .uploadAvatar(file)
+      .pipe(
+        switchMap((res) => this.authService.updateAvatarKey(res.key)),
+        finalize(() => {
+          this.isUploadingProfileImage = false;
+          this.selectedProfileImageFile = null;
+          this.revokePreviewUrl();
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (profile: AuthProfileResponse) => {
+          this.authService.setUserAvatarKey(profile.avatarKey ?? null);
+          this.loadPersistedAvatar();
+          this.showSuccess('Foto de perfil atualizada!');
+        },
+        error: (error: HttpErrorResponse) => {
+          this.showError(
+            this.apiError.message(error, {
+              fallback: 'Erro ao enviar foto. Tente novamente.',
+            }),
+          );
+          this.logger.error('Upload profile image error:', error);
+        },
+      });
   }
 
-  private clearProfileImageMessages(): void {
+  private clearInputValue(): void {
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    input?.setAttribute('value', '');
+  }
+
+  private clearMessages(): void {
     this.profileImageErrorMessage = '';
     this.profileImageSuccessMessage = '';
-    this.clearProfileImageMessageTimeout();
+    this.clearMessageTimeout();
   }
 
-  private clearProfileImageMessageTimeout(): void {
+  private clearMessageTimeout(): void {
     if (this.profileImageMessageTimeout) {
       clearTimeout(this.profileImageMessageTimeout);
-      this.profileImageMessageTimeout = undefined;
+      this.profileImageMessageTimeout = null;
     }
   }
 
-  private showProfileImageSuccessMessage(message: string, duration: number = 3000): void {
+  private showSuccess(message: string): void {
     this.profileImageSuccessMessage = message;
     this.profileImageErrorMessage = '';
-    this.clearProfileImageMessageTimeout();
-    this.profileImageMessageTimeout = setTimeout(() => {
-      this.profileImageSuccessMessage = '';
-    }, duration);
+    this.setMessageTimeout();
   }
 
-  private showProfileImageErrorMessage(message: string): void {
+  private showError(message: string): void {
     this.profileImageErrorMessage = message;
     this.profileImageSuccessMessage = '';
-    this.clearProfileImageMessageTimeout();
+    this.clearMessageTimeout();
   }
 
-  private revokeProfileImagePreviewObjectUrl(): void {
-    if (this.profileImagePreviewObjectUrl) {
-      URL.revokeObjectURL(this.profileImagePreviewObjectUrl);
-      this.profileImagePreviewObjectUrl = undefined;
-    }
+  private setMessageTimeout(): void {
+    this.clearMessageTimeout();
+    this.profileImageMessageTimeout = setTimeout(() => {
+      this.profileImageSuccessMessage = '';
+    }, SUCCESS_MESSAGE_DURATION);
+  }
+
+  private revokePreviewUrl(): void {
+    const url = this.previewObjectUrl();
+    if (url) URL.revokeObjectURL(url);
+    this.previewObjectUrl.set(null);
+  }
+
+  private revokeUserAvatarUrl(): void {
+    const url = this.persistedAvatarObjectUrl();
+    if (url) URL.revokeObjectURL(url);
+    this.persistedAvatarObjectUrl.set(null);
   }
 }
-
