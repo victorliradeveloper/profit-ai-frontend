@@ -12,6 +12,7 @@ import { TableToolbarComponent } from '../../components/table/toolbar/table-tool
 import { CategoriesTableComponent } from './components/table/table.component';
 import { CategoryRow } from './components/table/table.types';
 import { CategoriesDataService, CategoryType } from '../../services/categories/categories-data.service';
+import { createCategoryRowId, newCategoryModalData } from './constants';
 import {
   EditCategoryModalComponent,
   EditCategoryModalData,
@@ -56,15 +57,10 @@ export class CategoriesComponent {
   }
 
   async onAddCategory(): Promise<void> {
-    const result = await this.openCategoryEditor({
-      name: '',
-      title: 'Nova categoria',
-      icon: 'restaurant',
-      color: '#ef4444',
-    });
+    const result = await this.openCategoryEditor(newCategoryModalData());
     if (!result) return;
     const newRow: CategoryRow = {
-      id: `category-${crypto.randomUUID()}`,
+      id: createCategoryRowId(),
       name: result.name,
       icon: result.icon,
       color: result.color,
@@ -77,7 +73,17 @@ export class CategoriesComponent {
   }
 
   onRowAction(action: 'details' | 'edit' | 'archive', row: CategoryRow): void {
-    if (action === 'edit') void this.openEditCategoryModal(row);
+    switch (action) {
+      case 'edit':
+        void this.openEditCategoryModal(row);
+        break;
+      case 'details':
+        // TODO: abrir detalhes da categoria
+        break;
+      case 'archive':
+        // TODO: arquivar categoria
+        break;
+    }
   }
 
   private async openEditCategoryModal(row: CategoryRow): Promise<void> {

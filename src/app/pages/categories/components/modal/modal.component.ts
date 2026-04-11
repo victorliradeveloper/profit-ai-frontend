@@ -6,6 +6,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { firstValueFrom } from 'rxjs';
+import {
+  DEFAULT_CATEGORY_COLOR_HEX,
+  DEFAULT_CATEGORY_ICON,
+} from '../../constants';
 import { CATEGORY_MATERIAL_ICONS } from '../icon-picker-modal/category-material-icons';
 import {
   CategoryIconPickerModalComponent,
@@ -29,7 +33,7 @@ export type EditCategoryModalPayload = {
 type ColorSwatch = { readonly hex: string; readonly label: string };
 
 const QUICK_COLOR_SWATCHES: readonly ColorSwatch[] = [
-  { hex: '#ef4444', label: 'Vermelho' },
+  { hex: DEFAULT_CATEGORY_COLOR_HEX, label: 'Vermelho' },
   { hex: '#42a5f5', label: 'Azul claro' },
   { hex: '#a855f7', label: 'Roxo' },
   { hex: '#84cc16', label: 'Verde lima' },
@@ -53,8 +57,6 @@ const EXTENDED_COLOR_SWATCHES: readonly ColorSwatch[] = [
   { hex: '#000000', label: 'Preto' },
 ];
 
-const DEFAULT_COLOR_HEX = QUICK_COLOR_SWATCHES[0].hex;
-
 const QUICK_ICONS = ['restaurant', 'directions_car', 'checkroom', 'qr_code_2'] as const;
 
 const QUICK_ICON_LABELS: Record<string, string> = {
@@ -65,8 +67,6 @@ const QUICK_ICON_LABELS: Record<string, string> = {
 };
 
 const ALLOWED_MATERIAL_ICONS = new Set<string>(CATEGORY_MATERIAL_ICONS as readonly string[]);
-
-const DEFAULT_CATEGORY_ICON = 'restaurant';
 
 function normalizeMaterialIcon(icon: string | undefined): string {
   const v = icon?.trim();
@@ -119,7 +119,7 @@ export class EditCategoryModalComponent {
       validators: [Validators.required, Validators.maxLength(60)],
     });
     this.selectedIcon = normalizeMaterialIcon(data.icon);
-    this.selectedColor = data.color ?? DEFAULT_COLOR_HEX;
+    this.selectedColor = data.color ?? DEFAULT_CATEGORY_COLOR_HEX;
   }
 
   /** Tamanho lógico do conjunto de cores (para aria-setsize nos radios). */
