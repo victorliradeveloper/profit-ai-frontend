@@ -58,8 +58,8 @@ export class PlanningComponent {
     console.log('Export planning data for:', this.currentMonth());
   }
 
-  onFiltersChange(filters: any): void {
-    // TODO: aplicar filtros
+  onFiltersChange(_filters: unknown): void {
+    void _filters;
   }
 
   // Private Methods
