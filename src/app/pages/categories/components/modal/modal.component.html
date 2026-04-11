@@ -1,6 +1,6 @@
 <form class="px-10 pt-8 pb-7 w-[min(820px,calc(100vw-2rem))]" (submit)="$event.preventDefault(); save()">
   <div class="flex items-start justify-between gap-6">
-    <div class="text-[28px] font-semibold leading-tight">Editar categoria</div>
+    <div class="text-[28px] font-semibold leading-tight">{{ data.title ?? 'Editar categoria' }}</div>
 
     <button
       type="button"
@@ -22,7 +22,104 @@
     />
   </div>
 
-  <div class="mt-8 flex items-center justify-end gap-3">
+  <div class="mt-10">
+    <div class="flex items-center gap-2 text-white/90 text-sm font-semibold mb-3">
+      <mat-icon class="!text-[20px] !w-5 !h-5 text-white/80" aria-hidden="true">palette</mat-icon>
+      Cor da categoria
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      @for (c of quickColors; track c) {
+        <button
+          type="button"
+          (click)="selectColor(c)"
+          class="relative w-10 h-10 rounded-full shrink-0 border-2 transition-[box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          [style.background]="c"
+          [class.ring-2]="selectedColor === c"
+          [class.ring-white]="selectedColor === c"
+          [class.ring-offset-2]="selectedColor === c"
+          [class.ring-offset-[#2c2c2e]]="selectedColor === c"
+          [attr.aria-label]="'Cor ' + c"
+          [attr.aria-pressed]="selectedColor === c"
+        >
+          @if (selectedColor === c) {
+            <mat-icon
+              class="!absolute !inset-0 !m-auto !text-[18px] !w-[18px] !h-[18px] text-white drop-shadow-md pointer-events-none"
+              aria-hidden="true"
+              >check</mat-icon
+            >
+          }
+        </button>
+      }
+      <button
+        type="button"
+        class="h-9 px-4 rounded-full text-xs font-semibold tracking-wide bg-white/12 text-white/85 hover:bg-white/18 border-0 cursor-pointer transition-colors"
+        (click)="showExtendedColors = !showExtendedColors"
+        [attr.aria-expanded]="showExtendedColors"
+      >
+        OUTROS
+      </button>
+    </div>
+    @if (showExtendedColors) {
+      <div class="flex flex-wrap gap-2 mt-4 pt-1" role="list">
+        @for (c of extendedColors; track c) {
+          <button
+            type="button"
+            (click)="selectColor(c)"
+            class="relative w-9 h-9 rounded-full shrink-0 border border-white/15 transition-[box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            [style.background]="c"
+            [class.ring-2]="selectedColor === c"
+            [class.ring-white]="selectedColor === c"
+            [class.ring-offset-2]="selectedColor === c"
+            [class.ring-offset-[#2c2c2e]]="selectedColor === c"
+            [attr.aria-label]="'Cor ' + c"
+            [attr.aria-pressed]="selectedColor === c"
+          >
+            @if (selectedColor === c) {
+              <mat-icon
+                class="!absolute !inset-0 !m-auto !text-[16px] !w-4 !h-4 text-white drop-shadow-md pointer-events-none"
+                aria-hidden="true"
+                >check</mat-icon
+              >
+            }
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="mt-8">
+    <div class="flex items-center gap-2 text-white/90 text-sm font-semibold mb-3">
+      <mat-icon class="!text-[20px] !w-5 !h-5 text-white/80" aria-hidden="true">photo_library</mat-icon>
+      Ícone
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      @for (ic of quickIcons; track ic) {
+        <button
+          type="button"
+          (click)="selectedIcon = ic"
+          class="w-11 h-11 rounded-full flex items-center justify-center border-0 cursor-pointer transition-colors"
+          [ngClass]="
+            selectedIcon === ic
+              ? 'bg-white/25 text-white shadow-[inset_0_0_0_2px_rgba(255,255,255,0.45)]'
+              : 'bg-white/10 text-white/90 hover:bg-white/15'
+          "
+          [attr.aria-label]="'Ícone ' + ic"
+          [attr.aria-pressed]="selectedIcon === ic"
+        >
+          <mat-icon class="!text-[22px]">{{ ic }}</mat-icon>
+        </button>
+      }
+      <button
+        type="button"
+        class="h-9 px-4 rounded-full text-xs font-semibold tracking-wide bg-white/12 text-white/85 hover:bg-white/18 border-0 cursor-pointer transition-colors"
+        (click)="openFullIconPicker()"
+      >
+        OUTROS
+      </button>
+    </div>
+  </div>
+
+  <div class="mt-10 flex items-center justify-end gap-3">
     <button
       type="button"
       class="h-10 px-5 rounded-full text-white/70 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
@@ -32,11 +129,10 @@
     </button>
     <button
       type="submit"
-      class="h-10 px-6 rounded-full bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+      class="h-10 px-8 rounded-full bg-red-500 hover:bg-red-400 text-white font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed border-0 cursor-pointer transition-colors"
       [disabled]="nameControl.invalid"
     >
-      Salvar
+      SALVAR
     </button>
   </div>
 </form>
-

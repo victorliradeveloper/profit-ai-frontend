@@ -13,6 +13,7 @@ import { CategoryRow } from './components/table/table.types';
 import { CategoriesDataService, CategoryType } from '../../services/categories/categories-data.service';
 import {
   EditCategoryNameModalComponent,
+  EditCategoryNameModalData,
   EditCategoryNameModalResult,
 } from './components/modal/modal.component';
 
@@ -53,6 +54,28 @@ export class CategoriesComponent {
   }
 
   onAddCategory(): void {
+    const ref = this.dialog.open<EditCategoryNameModalComponent, EditCategoryNameModalData, EditCategoryNameModalResult>(
+      EditCategoryNameModalComponent,
+      {
+        data: { name: '', title: 'Nova categoria', icon: 'restaurant', color: '#ef4444' },
+        panelClass: 'edit-category-name-modal',
+        autoFocus: false,
+      },
+    );
+
+    ref
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((result) => {
+        if (!result) return;
+        const newRow: CategoryRow = {
+          id: `category-${crypto.randomUUID()}`,
+          name: result.name,
+          icon: result.icon,
+          color: result.color,
+        };
+        this.rows = [newRow, ...this.rows];
+      });
   }
 
   onRefresh(): void {
@@ -64,10 +87,10 @@ export class CategoriesComponent {
   }
 
   private openEditNameModal(row: CategoryRow): void {
-    const ref = this.dialog.open<EditCategoryNameModalComponent, { name: string }, EditCategoryNameModalResult>(
+    const ref = this.dialog.open<EditCategoryNameModalComponent, EditCategoryNameModalData, EditCategoryNameModalResult>(
       EditCategoryNameModalComponent,
       {
-        data: { name: row.name },
+        data: { name: row.name, icon: row.icon, color: row.color },
         panelClass: 'edit-category-name-modal',
         autoFocus: false,
       },
@@ -78,7 +101,9 @@ export class CategoriesComponent {
       .pipe(take(1))
       .subscribe((result) => {
         if (!result) return;
-        this.rows = this.rows.map((r) => (r.id === row.id ? { ...r, name: result.name } : r));
+        this.rows = this.rows.map((r) =>
+          r.id === row.id ? { ...r, name: result.name, icon: result.icon, color: result.color } : r,
+        );
       });
   }
 
