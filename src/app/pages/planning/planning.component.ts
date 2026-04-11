@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+
 import { MonthSwitchComponent } from '../../components/month-switch/month-switch.component';
 import { DataTableColumn } from '../../components/table/data-table/data-table.types';
 import { TableToolbarComponent } from '../../components/table/toolbar/table-toolbar.component';
@@ -16,44 +17,82 @@ import { TransactionRow } from '../transactions/components/table/table.types';
   imports: [
     CommonModule,
     MatIconModule,
+    
+    // Components
     TableToolbarComponent,
-    TransactionsFiltersComponent,
     MonthSwitchComponent,
+    TransactionsFiltersComponent,
     TransactionsSummaryCardsComponent,
     TransactionsTableComponent,
   ],
   templateUrl: './planning.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class PlanningComponent {
-  private readonly data = inject(TransactionsDataService);
+  // Services
+  private readonly dataService = inject(TransactionsDataService);
 
-  currentMonth = new Date();
+  // State
+  readonly currentMonth = signal(new Date());
 
-  readonly columns: Array<DataTableColumn<TransactionRow>> = [
-    { key: 'status', header: 'Situação', sortable: false, resizable: false },
-    {
-      key: 'date',
-      header: 'Data',
-      sortable: true,
-      resizable: true,
-      sortAccessor: (row) => {
-        const v = row.date;
-        const [dd, mm, yyyy] = v.split('/').map((x) => Number(x));
-        if (!dd || !mm || !yyyy) return v;
-        return new Date(yyyy, mm - 1, dd).getTime();
-      },
-    },
-    { key: 'description', header: 'Descrição', sortable: true, resizable: true },
-    { key: 'category', header: 'Categoria', sortable: false, resizable: true },
-    { key: 'value', header: 'Valor', sortable: true, resizable: true, align: 'right' },
-    { key: 'actions', header: 'Ações', sortable: false, resizable: false, align: 'right' },
-  ];
+  // Columns Definition
+  readonly columns: DataTableColumn<TransactionRow>[] = this.defineColumns();
 
-  readonly rows = this.data.rows;
-  readonly summaryCards = this.data.summaryCards;
-  readonly projectedDayEndBalance = this.data.projectedDayEndBalance;
+  // Computed Data (reativo!)
+  readonly rows = computed(() => this.dataService.rows);
+  readonly summaryCards = computed(() => this.dataService.summaryCards);
+  readonly projectedDayEndBalance = computed(() => this.dataService.projectedDayEndBalance);
+  readonly currentMonthLabel = computed(() => 
+    this.currentMonth().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+  );
+
+  // Public API
+  onMonthChange(month: Date): void {
+    this.currentMonth.set(month);
+    // TODO: filtrar dados por mês
+  }
 
   onExport(): void {
+    // TODO: implementar exportação
+    console.log('Export planning data for:', this.currentMonth());
+  }
+
+  onFiltersChange(filters: any): void {
+    // TODO: aplicar filtros
+  }
+
+  // Private Methods
+  private defineColumns(): DataTableColumn<TransactionRow>[] {
+    return [
+      { key: 'status', header: 'Situação', sortable: false, resizable: false },
+      {
+        key: 'date',
+        header: 'Data',
+        sortable: true,
+        resizable: true,
+        sortAccessor: this.createDateSortAccessor,
+      },
+      { key: 'description', header: 'Descrição', sortable: true, resizable: true },
+      { key: 'category', header: 'Categoria', sortable: false, resizable: true },
+      { 
+        key: 'value', 
+        header: 'Valor', 
+        sortable: true, 
+        resizable: true, 
+        align: 'right' 
+      },
+      { key: 'actions', header: 'Ações', sortable: false, resizable: false, align: 'right' },
+    ];
+  }
+
+  private createDateSortAccessor(row: TransactionRow): number | string {
+    const [day, month, year] = row.date.split('/').map(Number);
+    
+    if (!day || !month || !year) {
+      return row.date;
+    }
+    
+    return new Date(year, month - 1, day).getTime();
   }
 }
-
