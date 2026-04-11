@@ -1,283 +1,384 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy } from '@angular/core';
+import { Component, inject, DestroyRef, effect, signal, computed } from '@angular/core';
 import {
-  AbstractControl,
+  FormBuilder,
   ReactiveFormsModule,
-  UntypedFormBuilder,
-  UntypedFormGroup,
-  ValidationErrors,
   Validators,
+  AbstractControl,
+  ValidationErrors,
+  FormGroup,
+  FormControl,
 } from '@angular/forms';
-import { finalize, Subscription } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ICONS } from '../../../../constants/icons';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { finalize, map, merge, startWith } from 'rxjs';
+
 import { AuthService } from '../../../../services/auth/auth.service';
+import { ICONS } from '../../../../constants/icons';
 import { LoggerService } from '../../../../services/logger/logger.service';
 import { ProfileSessionService } from '../../../../services/profile/profile-session.service';
 import { ApiErrorService } from '../../../../services/http/api-error.service';
+
+/** Control map for typed `FormGroup` (not the raw value shape). */
+interface PasswordFormControls {
+  currentPassword: FormControl<string>;
+  newPassword: FormControl<string>;
+  confirmPassword: FormControl<string>;
+}
+
+interface PasswordStrength {
+  score: number;
+  label: string;
+  barClass: string;
+}
+
+interface PasswordRequirement {
+  label: string;
+  ok: boolean;
+}
 
 @Component({
   selector: 'app-change-password-section',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './change-password-section.component.html'
+  templateUrl: './change-password-section.component.html',
 })
-export class ChangePasswordSectionComponent implements OnDestroy {
+export class ChangePasswordSectionComponent {
+  // Constants
   readonly ICONS = ICONS;
-
-  isChangingPassword: boolean = false;
-  isChangingPasswordLoading: boolean = false;
-  passwordErrorMessage: string = '';
-  passwordSuccessMessage: string = '';
-
-  readonly passwordForm: UntypedFormGroup;
-
-  showCurrentPassword: boolean = false;
-  showNewPassword: boolean = false;
-  showConfirmPassword: boolean = false;
-  passwordSubmitAttempted: boolean = false;
-
   private readonly MIN_PASSWORD_LENGTH = 6;
-  private passwordMessageTimeout?: ReturnType<typeof setTimeout>;
-  private formSub?: Subscription;
+  private readonly SUCCESS_MESSAGE_DURATION = 3000;
 
-  constructor(
-    private authService: AuthService,
-    private profileSession: ProfileSessionService,
-    private logger: LoggerService,
-    private apiError: ApiErrorService,
-    private fb: UntypedFormBuilder
-  ) {
-    this.passwordForm = this.fb.group(
-      {
-        currentPassword: ['', [Validators.required]],
-        newPassword: ['', [Validators.required, Validators.minLength(this.MIN_PASSWORD_LENGTH)]],
-        confirmPassword: ['', [Validators.required, Validators.minLength(this.MIN_PASSWORD_LENGTH)]],
-      },
-      {
-        validators: [this.passwordsMatchValidator, this.newDifferentFromCurrentValidator],
-      }
-    );
+  // Services
+  private readonly authService = inject(AuthService);
+  private readonly profileSession = inject(ProfileSessionService);
+  private readonly logger = inject(LoggerService);
+  private readonly apiError = inject(ApiErrorService);
+  private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
 
-    this.formSub = this.passwordForm.valueChanges.subscribe(() => {
-      if (this.passwordErrorMessage || this.passwordSuccessMessage) {
-        this.clearPasswordMessages();
+  // State
+  isChangingPassword = false;
+  isChangingPasswordLoading = false;
+  passwordSubmitAttempted = false;
+  
+  showCurrentPassword = false;
+  showNewPassword = false;
+  showConfirmPassword = false;
+
+  // Form
+  readonly passwordForm = this.createPasswordForm();
+
+  /** Recomputed when password fields change (computed() does not track FormControl values). */
+  private readonly newPasswordValue = toSignal(
+    this.passwordForm.controls.newPassword.valueChanges.pipe(
+      startWith(this.passwordForm.controls.newPassword.value),
+    ),
+    { initialValue: this.passwordForm.controls.newPassword.value },
+  );
+
+  private readonly currentPasswordValue = toSignal(
+    this.passwordForm.controls.currentPassword.valueChanges.pipe(
+      startWith(this.passwordForm.controls.currentPassword.value),
+    ),
+    { initialValue: this.passwordForm.controls.currentPassword.value },
+  );
+
+  /** Bumps when any control value/status changes so validity-based computeds stay fresh. */
+  private readonly passwordFormValidityTick = toSignal(
+    merge(
+      this.passwordForm.valueChanges,
+      this.passwordForm.statusChanges,
+    ).pipe(map(() => undefined), startWith(undefined)),
+    { initialValue: undefined },
+  );
+
+  // UI State
+  readonly passwordErrorMessage = signal('');
+  readonly passwordSuccessMessage = signal('');
+
+  // Computed
+  readonly canSubmitPasswordChange = computed(() => {
+    this.passwordFormValidityTick();
+    return this.passwordForm.valid && !this.isChangingPasswordLoading;
+  });
+
+  readonly newPasswordStrength = computed(() =>
+    this.calculatePasswordStrength(this.newPasswordValue() ?? ''),
+  );
+
+  readonly newPasswordRequirements = computed(() =>
+    this.calculatePasswordRequirements(
+      this.newPasswordValue() ?? '',
+      this.currentPasswordValue() ?? '',
+    ),
+  );
+
+  // Effects (auto-cleanup!)
+  constructor() {
+    effect(() => {
+      if (this.passwordErrorMessage() || this.passwordSuccessMessage()) {
+        this.passwordForm.markAsDirty();
       }
-    });
+    }, { allowSignalWrites: true });
   }
 
-  ngOnDestroy(): void {
-    this.clearPasswordMessageTimeout();
-    this.formSub?.unsubscribe();
-  }
-
+  // Public API
   startChangingPassword(): void {
     this.isChangingPassword = true;
     this.passwordSubmitAttempted = false;
-    this.passwordForm.reset();
-    this.passwordForm.markAsPristine();
-    this.passwordForm.markAsUntouched();
+    this.resetForm();
     this.clearPasswordMessages();
   }
 
   cancelChangingPassword(): void {
     this.isChangingPassword = false;
     this.passwordSubmitAttempted = false;
-    this.passwordForm.reset();
-    this.passwordForm.markAsPristine();
-    this.passwordForm.markAsUntouched();
+    this.resetForm();
     this.clearPasswordMessages();
   }
 
   togglePasswordVisibility(field: 'current' | 'new' | 'confirm'): void {
-    if (field === 'current') this.showCurrentPassword = !this.showCurrentPassword;
-    if (field === 'new') this.showNewPassword = !this.showNewPassword;
-    if (field === 'confirm') this.showConfirmPassword = !this.showConfirmPassword;
-  }
-
-  onPasswordInput(): void {
-    if (this.passwordErrorMessage || this.passwordSuccessMessage) {
-      this.clearPasswordMessages();
+    switch (field) {
+      case 'current':
+        this.showCurrentPassword = !this.showCurrentPassword;
+        break;
+      case 'new':
+        this.showNewPassword = !this.showNewPassword;
+        break;
+      case 'confirm':
+        this.showConfirmPassword = !this.showConfirmPassword;
+        break;
     }
-  }
-
-  private readonly passwordsMatchValidator = (control: AbstractControl): ValidationErrors | null => {
-    const newPassword = control.get('newPassword')?.value as string | undefined;
-    const confirmPassword = control.get('confirmPassword')?.value as string | undefined;
-    if (!newPassword || !confirmPassword) return null;
-    return newPassword === confirmPassword ? null : { passwordMismatch: true };
-  };
-
-  private readonly newDifferentFromCurrentValidator = (control: AbstractControl): ValidationErrors | null => {
-    const currentPassword = control.get('currentPassword')?.value as string | undefined;
-    const newPassword = control.get('newPassword')?.value as string | undefined;
-    if (!currentPassword || !newPassword) return null;
-    return currentPassword === newPassword ? { sameAsCurrent: true } : null;
-  };
-
-  private shouldShowError(control: AbstractControl | null): boolean {
-    if (!control) return false;
-    return this.passwordSubmitAttempted || control.touched;
-  }
-
-  get currentPasswordValidationError(): string | null {
-    const c = this.passwordForm.get('currentPassword');
-    if (!this.shouldShowError(c)) return null;
-    if (c?.hasError('required')) return 'Informe sua senha atual.';
-    return null;
-  }
-
-  get newPasswordValidationError(): string | null {
-    const c = this.passwordForm.get('newPassword');
-    if (!this.shouldShowError(c)) return null;
-    if (c?.hasError('required')) return 'A senha é obrigatória';
-    if (c?.hasError('minlength')) {
-      return `A senha deve ter pelo menos ${this.MIN_PASSWORD_LENGTH} caracteres`;
-    }
-    if (this.passwordForm.hasError('sameAsCurrent')) return 'A nova senha deve ser diferente da senha atual.';
-    return null;
-  }
-
-  get confirmPasswordValidationError(): string | null {
-    const c = this.passwordForm.get('confirmPassword');
-    if (!this.shouldShowError(c)) return null;
-    if (c?.hasError('required')) return 'Confirme a nova senha.';
-    if (c?.hasError('minlength')) {
-      return `A senha deve ter pelo menos ${this.MIN_PASSWORD_LENGTH} caracteres`;
-    }
-    if (this.passwordForm.hasError('passwordMismatch')) return 'As senhas não coincidem.';
-    return null;
-  }
-
-  get canSubmitPasswordChange(): boolean {
-    return this.passwordForm.valid && !this.isChangingPasswordLoading;
-  }
-
-  get newPasswordStrength(): { score: number; label: string; barClass: string } {
-    const pwd = (this.passwordForm.get('newPassword')?.value as string) || '';
-    if (!pwd) {
-      return { score: 0, label: '—', barClass: 'bg-gray-200' };
-    }
-
-    const hasLower = /[a-z]/.test(pwd);
-    const hasUpper = /[A-Z]/.test(pwd);
-    const hasDigit = /\d/.test(pwd);
-    const hasSymbol = /[^A-Za-z0-9]/.test(pwd);
-    const len = pwd.length;
-
-    let score = 0;
-    if (len >= this.MIN_PASSWORD_LENGTH) score += 1;
-    if (len >= 10) score += 1;
-    if (hasLower && hasUpper) score += 1;
-    if (hasDigit) score += 1;
-    if (hasSymbol) score += 1;
-    score = Math.min(score, 4);
-
-    if (score <= 1) return { score, label: 'Fraca', barClass: 'bg-red-500' };
-    if (score === 2) return { score, label: 'Média', barClass: 'bg-yellow-500' };
-    if (score === 3) return { score, label: 'Boa', barClass: 'bg-green-500' };
-    return { score, label: 'Forte', barClass: 'bg-emerald-600' };
-  }
-
-  get newPasswordRequirements(): Array<{ label: string; ok: boolean }> {
-    const pwd = (this.passwordForm.get('newPassword')?.value as string) || '';
-    const current = (this.passwordForm.get('currentPassword')?.value as string) || '';
-    return [
-      { label: `Mínimo de ${this.MIN_PASSWORD_LENGTH} caracteres`, ok: pwd.length >= this.MIN_PASSWORD_LENGTH },
-      { label: 'Pelo menos 1 letra maiúscula e 1 minúscula', ok: /[a-z]/.test(pwd) && /[A-Z]/.test(pwd) },
-      { label: 'Pelo menos 1 número', ok: /\d/.test(pwd) },
-      { label: 'Pelo menos 1 caractere especial', ok: /[^A-Za-z0-9]/.test(pwd) },
-      { label: 'Diferente da senha atual', ok: !pwd || !current || pwd !== current },
-    ];
   }
 
   changePassword(): void {
     this.passwordSubmitAttempted = true;
+    
     if (this.passwordForm.invalid) {
       this.passwordForm.markAllAsTouched();
       return;
     }
 
+    this.executePasswordChange();
+  }
+
+  /** Clears API/banner messages while the user edits the form. */
+  onPasswordInput(): void {
+    this.clearPasswordMessages();
+  }
+
+  // Getters (Template Helpers)
+  get currentPasswordControl() {
+    return this.passwordForm.get('currentPassword');
+  }
+
+  get newPasswordControl() {
+    return this.passwordForm.get('newPassword');
+  }
+
+  get confirmPasswordControl() {
+    return this.passwordForm.get('confirmPassword');
+  }
+
+  get currentPasswordError(): string | null {
+    return this.getControlError(this.currentPasswordControl, {
+      required: 'Informe sua senha atual.'
+    });
+  }
+
+  get newPasswordError(): string | null {
+    const control = this.newPasswordControl;
+    const field = this.getControlError(control, {
+      required: 'A senha é obrigatória',
+      minlength: `A senha deve ter pelo menos ${this.MIN_PASSWORD_LENGTH} caracteres`,
+    });
+    if (field) return field;
+    if (control && this.shouldShowError(control) && this.passwordForm.hasError('sameAsCurrent')) {
+      return 'A nova senha deve ser diferente da atual.';
+    }
+    return null;
+  }
+
+  get confirmPasswordError(): string | null {
+    const control = this.confirmPasswordControl;
+    const field = this.getControlError(control, {
+      required: 'Confirme a nova senha.',
+      minlength: `A senha deve ter pelo menos ${this.MIN_PASSWORD_LENGTH} caracteres`,
+    });
+    if (field) return field;
+    if (control && this.shouldShowError(control) && this.passwordForm.hasError('passwordMismatch')) {
+      return 'As senhas não coincidem.';
+    }
+    return null;
+  }
+
+  // Private Methods
+  private createPasswordForm(): FormGroup<PasswordFormControls> {
+    return this.fb.group({
+      currentPassword: this.fb.nonNullable.control('', Validators.required),
+      newPassword: this.fb.nonNullable.control('', [
+        Validators.required,
+        Validators.minLength(this.MIN_PASSWORD_LENGTH),
+      ]),
+      confirmPassword: this.fb.nonNullable.control('', [
+        Validators.required,
+        Validators.minLength(this.MIN_PASSWORD_LENGTH),
+      ]),
+    }, {
+      validators: [
+        this.passwordsMatchValidator.bind(this),
+        this.newDifferentFromCurrentValidator.bind(this),
+      ],
+    });
+  }
+
+  private passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
+    const newPassword = this.valueAsString(control.get('newPassword'));
+    const confirmPassword = this.valueAsString(control.get('confirmPassword'));
+    
+    if (!newPassword || !confirmPassword) return null;
+    return newPassword === confirmPassword ? null : { passwordMismatch: true };
+  }
+
+  private newDifferentFromCurrentValidator(control: AbstractControl): ValidationErrors | null {
+    const currentPassword = this.valueAsString(control.get('currentPassword'));
+    const newPassword = this.valueAsString(control.get('newPassword'));
+    
+    if (!currentPassword || !newPassword) return null;
+    return currentPassword === newPassword ? { sameAsCurrent: true } : null;
+  }
+
+  private executePasswordChange(): void {
+    const { currentPassword, newPassword } = this.passwordForm.getRawValue();
+    
     this.isChangingPasswordLoading = true;
     this.clearPasswordMessages();
     this.passwordForm.disable({ emitEvent: false });
 
-    const { currentPassword, newPassword } = this.passwordForm.getRawValue() as {
-      currentPassword: string;
-      newPassword: string;
-      confirmPassword: string;
-    };
-
-    this.authService.changePassword({
-      currentPassword,
-      newPassword,
-    }).pipe(
-      finalize(() => {
-        this.isChangingPasswordLoading = false;
-        this.passwordForm.enable({ emitEvent: false });
-      })
-    ).subscribe({
-      next: () => {
-        this.isChangingPassword = false;
-        this.passwordSubmitAttempted = false;
-        this.passwordForm.reset();
-        this.passwordForm.markAsPristine();
-        this.passwordForm.markAsUntouched();
-        this.showCurrentPassword = false;
-        this.showNewPassword = false;
-        this.showConfirmPassword = false;
-        this.showPasswordSuccessMessage('Senha alterada com sucesso!');
-      },
-      error: (error: HttpErrorResponse) => {
-        this.handlePasswordChangeError(error);
-      }
-    });
+    this.authService.changePassword({ currentPassword, newPassword })
+      .pipe(
+        finalize(() => this.resetPasswordChangeState()),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: () => this.handlePasswordChangeSuccess(),
+        error: (error: HttpErrorResponse) => this.handlePasswordChangeError(error),
+      });
   }
 
-  private clearPasswordMessages(): void {
-    this.passwordErrorMessage = '';
-    this.passwordSuccessMessage = '';
-    this.clearPasswordMessageTimeout();
+  private resetPasswordChangeState(): void {
+    this.isChangingPasswordLoading = false;
+    this.passwordForm.enable({ emitEvent: false });
   }
 
-  private clearPasswordMessageTimeout(): void {
-    if (this.passwordMessageTimeout) {
-      clearTimeout(this.passwordMessageTimeout);
-      this.passwordMessageTimeout = undefined;
-    }
+  private resetForm(): void {
+    this.passwordForm.reset();
+    this.passwordForm.markAsPristine();
+    this.passwordForm.markAsUntouched();
   }
 
-  private showPasswordSuccessMessage(message: string, duration: number = 3000): void {
-    this.passwordSuccessMessage = message;
-    this.passwordErrorMessage = '';
-    this.clearPasswordMessageTimeout();
-    this.passwordMessageTimeout = setTimeout(() => {
-      this.passwordSuccessMessage = '';
-    }, duration);
-  }
-
-  private showPasswordErrorMessage(message: string): void {
-    this.passwordErrorMessage = message;
-    this.passwordSuccessMessage = '';
-    this.clearPasswordMessageTimeout();
+  private handlePasswordChangeSuccess(): void {
+    this.cancelChangingPassword();
+    this.showPasswordSuccessMessage('Senha alterada com sucesso!');
   }
 
   private handlePasswordChangeError(error: HttpErrorResponse): void {
-    if (error?.status === 401) {
+    if (error.status === 401) {
       this.showPasswordErrorMessage('Senha atual incorreta.');
       return;
     }
 
-    if (error?.status === 403) {
-      this.showPasswordErrorMessage('Sessão expirada. Por favor, faça login novamente.');
+    if (error.status === 403) {
+      this.showPasswordErrorMessage('Sessão expirada. Faça login novamente.');
       this.profileSession.scheduleLogoutToLogin();
       return;
     }
 
-    this.showPasswordErrorMessage(this.apiError.message(error, {
-      fallback: 'Erro ao alterar senha. Tente novamente.'
-    }));
+    this.showPasswordErrorMessage(
+      this.apiError.message(error, { fallback: 'Erro ao alterar senha. Tente novamente.' })
+    );
     this.logger.error('Change password error:', error);
   }
-}
 
+  private getControlError(control: AbstractControl | null, errors: Record<string, string>): string | null {
+    if (!control?.invalid || !this.shouldShowError(control)) return null;
+    
+    for (const [errorKey, message] of Object.entries(errors)) {
+      if (control.hasError(errorKey)) return message;
+    }
+    
+    return null;
+  }
+
+  private shouldShowError(control: AbstractControl): boolean {
+    return this.passwordSubmitAttempted || control.touched;
+  }
+
+  private valueAsString(control: AbstractControl | null): string {
+    const value = control?.value;
+    return typeof value === 'string' ? value : '';
+  }
+
+  private calculatePasswordStrength(pwd: string): PasswordStrength {
+    if (!pwd) {
+      return { score: 0, label: '—', barClass: 'bg-gray-200' };
+    }
+
+    const checks = [
+      pwd.length >= this.MIN_PASSWORD_LENGTH,
+      pwd.length >= 10,
+      /[a-z]/.test(pwd) && /[A-Z]/.test(pwd),
+      /\d/.test(pwd),
+      /[^A-Za-z0-9]/.test(pwd),
+    ];
+
+    const passedCount = Math.min(checks.filter(Boolean).length, 5);
+    /** 0 = nenhum critério; 1–5 = quantos critérios de força passaram (rótulos têm 5 níveis, índices 0–4). */
+    const tierIndex = Math.max(0, Math.min(passedCount - 1, 4));
+
+    const labels = ['Fraca', 'Média', 'Boa', 'Forte', 'Excelente'];
+    const colors = ['bg-red-500', 'bg-yellow-500', 'bg-green-500', 'bg-emerald-600', 'bg-blue-600'];
+
+    return {
+      score: passedCount,
+      label: labels[tierIndex],
+      barClass: colors[tierIndex],
+    };
+  }
+
+  private calculatePasswordRequirements(pwd: string, current: string): PasswordRequirement[] {
+    return [
+      { 
+        label: `Mínimo de ${this.MIN_PASSWORD_LENGTH} caracteres`, 
+        ok: pwd.length >= this.MIN_PASSWORD_LENGTH 
+      },
+      { 
+        label: '1 letra maiúscula e 1 minúscula', 
+        ok: /[a-z]/.test(pwd) && /[A-Z]/.test(pwd) 
+      },
+      { label: 'Pelo menos 1 número', ok: /\d/.test(pwd) },
+      { label: 'Pelo menos 1 caractere especial', ok: /[^A-Za-z0-9]/.test(pwd) },
+      { label: 'Diferente da senha atual', ok: pwd !== current },
+    ];
+  }
+
+  private clearPasswordMessages(): void {
+    this.passwordErrorMessage.set('');
+    this.passwordSuccessMessage.set('');
+  }
+
+  private showPasswordSuccessMessage(message: string): void {
+    this.passwordSuccessMessage.set(message);
+    this.passwordErrorMessage.set('');
+    
+    setTimeout(() => {
+      this.passwordSuccessMessage.set('');
+    }, this.SUCCESS_MESSAGE_DURATION);
+  }
+
+  private showPasswordErrorMessage(message: string): void {
+    this.passwordErrorMessage.set(message);
+    this.passwordSuccessMessage.set('');
+  }
+}
