@@ -2,12 +2,13 @@ import { Overlay } from '@angular/cdk/overlay';
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogConfig, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
+
 import { TableToolbarComponent } from '../../components/table/toolbar/table-toolbar.component';
 import { CategoriesTableComponent } from './components/table/table.component';
 import { CategoryRow } from './components/table/table.types';
@@ -35,91 +36,119 @@ import {
   ],
   templateUrl: './categories.component.html',
 })
+
 export class CategoriesComponent {
-  private readonly data = inject(CategoriesDataService);
+  // Services
+  private readonly categoriesData = inject(CategoriesDataService);
   private readonly dialog = inject(MatDialog);
   private readonly overlay = inject(Overlay);
 
+  // Constants
+  private readonly dialogConfig: Partial<MatDialogConfig<EditCategoryModalData>> = {
+    panelClass: 'edit-category-modal',
+    autoFocus: false,
+    maxWidth: 'min(100vw - 32px, 900px)',
+    maxHeight: '90vh',
+    scrollStrategy: this.overlay.scrollStrategies.block(),
+  };
+
+  private readonly categoryTypeLabels: Record<CategoryType, string> = {
+    despesa: 'Categoria de Despesas',
+    receita: 'Categoria de Receitas',
+  };
+
+  // State
   selectedCategoryType: CategoryType = 'despesa';
   showSearch = false;
   searchValue = '';
+  rows: CategoryRow[] = this.categoriesData.getRows(this.selectedCategoryType);
 
-  rows: CategoryRow[] = this.data.getRows(this.selectedCategoryType);
-
-  toggleSearch(): void {
+  // Public API
+  public toggleSearch(): void {
     this.showSearch = !this.showSearch;
     if (!this.showSearch) this.searchValue = '';
   }
 
-  setCategoryType(type: CategoryType): void {
+  public setCategoryType(type: CategoryType): void {
     this.selectedCategoryType = type;
-    this.rows = this.data.getRows(type);
+    this.rows = this.categoriesData.getRows(type);
   }
 
-  async onAddCategory(): Promise<void> {
-    const result = await this.openCategoryEditor(newCategoryModalData());
-    if (!result) return;
+  public async onAddCategory(): Promise<void> {
+    const payload = await this.openCategoryEditor(newCategoryModalData());
+    if (!payload) return;
+
     const newRow: CategoryRow = {
       id: createCategoryRowId(),
-      name: result.name,
-      icon: result.icon,
-      color: result.color,
+      name: payload.name,
+      icon: payload.icon,
+      color: payload.color,
     };
     this.rows = [newRow, ...this.rows];
   }
 
-  onRefresh(): void {
-    this.rows = this.data.getRows(this.selectedCategoryType);
+  public onRefresh(): void {
+    this.rows = this.categoriesData.getRows(this.selectedCategoryType);
   }
 
-  onRowAction(action: 'details' | 'edit' | 'archive', row: CategoryRow): void {
+  public onRowAction(action: 'details' | 'edit' | 'archive', row: CategoryRow): void {
     switch (action) {
       case 'edit':
         void this.openEditCategoryModal(row);
         break;
       case 'details':
-        // TODO: abrir detalhes da categoria
+        // TODO: open category details
         break;
       case 'archive':
-        // TODO: arquivar categoria
+        // TODO: archive category
         break;
     }
   }
 
+  // Getters
+  get categoryTypeLabel(): string {
+    return this.categoryTypeLabels[this.selectedCategoryType] ?? 'Categoria';
+  }
+
+  // Private Methods
   private async openEditCategoryModal(row: CategoryRow): Promise<void> {
-    const result = await this.openCategoryEditor({
+    const editorData: EditCategoryModalData = {
       name: row.name,
       icon: row.icon,
       color: row.color,
-    });
-    if (!result) return;
-    this.rows = this.rows.map(r =>
-      r.id === row.id ? { ...r, name: result.name, icon: result.icon, color: result.color } : r,
+    };
+
+    const payload = await this.openCategoryEditor(editorData);
+    if (!payload) return;
+
+    this.rows = this.rowsWithCategoryUpdated(this.rows, row.id, payload);
+  }
+
+  private rowsWithCategoryUpdated(
+    categoryRows: CategoryRow[],
+    updatedRowId: string,
+    payload: EditCategoryModalPayload,
+  ): CategoryRow[] {
+    return categoryRows.map((categoryRow) =>
+      categoryRow.id === updatedRowId
+        ? { ...categoryRow, ...payload }
+        : categoryRow,
     );
   }
 
   private async openCategoryEditor(
     data: EditCategoryModalData,
   ): Promise<EditCategoryModalPayload | null> {
-    const ref = this.dialog.open<
+    const dialogRef = this.dialog.open<
       EditCategoryModalComponent,
       EditCategoryModalData,
       EditCategoryModalPayload | null
-    >(EditCategoryModalComponent, {
-      data,
-      panelClass: 'edit-category-modal',
-      autoFocus: false,
-      maxWidth: 'min(100vw - 32px, 900px)',
-      maxHeight: '90vh',
-      scrollStrategy: this.overlay.scrollStrategies.block(),
-    });
-    const value = await firstValueFrom(ref.afterClosed());
-    return value ?? null;
+    >(EditCategoryModalComponent, this.getDialogConfig(data));
+
+    return firstValueFrom(dialogRef.afterClosed()).then((value) => value ?? null);
   }
 
-  get categoryTypeLabel(): string {
-    return this.selectedCategoryType === 'despesa'
-      ? 'Categoria de Despesas'
-      : 'Categoria de Receitas';
+  private getDialogConfig(data: EditCategoryModalData): MatDialogConfig<EditCategoryModalData> {
+    return { ...this.dialogConfig, data };
   }
 }
