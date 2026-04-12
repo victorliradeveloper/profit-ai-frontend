@@ -1,8 +1,18 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap, catchError, throwError } from 'rxjs';
-import { HttpErrorResponse } from '@angular/common/http';
-import { LoginRequest, LoginResponse, RegisterRequest, UpdateProfileRequest, UpdateProfileResponse, ChangePasswordRequest, ChangePasswordResponse, AuthProfileResponse } from './auth.types';
+import { Observable, throwError, OperatorFunction } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
+import { isNonEmptyString } from '../utils/string.utils';
+import {
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  UpdateProfileRequest,
+  UpdateProfileResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
+  AuthProfileResponse
+} from './auth.types';
 import { LoggerService } from '../logger/logger.service';
 import { AuthStateService } from './auth-state.service';
 import { SessionStorageService } from '../storage/session-storage.service';
@@ -10,10 +20,23 @@ import { AUTH_STORAGE_KEYS, AUTH_STORAGE_KEY_LIST } from './auth.storage';
 import { apiUrl } from '../http/api-url';
 import { API_PATHS } from '../http/api-paths';
 
+interface UserData {
+  name: string;
+  email: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
+  private readonly basePaths = {
+    login: apiUrl(API_PATHS.auth.login),
+    register: apiUrl(API_PATHS.auth.register),
+    profile: apiUrl(API_PATHS.auth.profile),
+    avatar: apiUrl(API_PATHS.auth.avatar),
+    password: apiUrl(API_PATHS.auth.password),
+  };
+
   constructor(
     private http: HttpClient,
     private logger: LoggerService,
@@ -21,85 +44,67 @@ export class AuthService {
     private storage: SessionStorageService
   ) {}
 
-  private handleHttpError(operation: string) {
-    return (error: HttpErrorResponse) => {
-      this.logger.error(`${operation} error in service:`, error);
-      return throwError(() => error);
-    };
-  }
-
-  private saveUserData(name: string, email: string, token?: string): void {
-    if (token) {
-      this.storage.set(AUTH_STORAGE_KEYS.TOKEN, token);
-    }
-    this.storage.set(AUTH_STORAGE_KEYS.USER_NAME, name);
-    this.storage.set(AUTH_STORAGE_KEYS.USER_EMAIL, email);
-  }
-
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(
-      apiUrl(API_PATHS.auth.login),
-      credentials
-    ).pipe(
-      tap(response => {
-        if (response.token && response.name) {
-          this.saveUserData(response.name, credentials.email, response.token);
-          this.authState.syncFromStorage();
-        }
-      }),
-      catchError(this.handleHttpError('Login'))
-    );
+    return this.http.post<LoginResponse>(this.basePaths.login, credentials)
+      .pipe(
+        this.handleAuthSuccess('login', credentials.email),
+        this.handleHttpError('login')
+      );
   }
 
   register(userData: RegisterRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(
-      apiUrl(API_PATHS.auth.register),
-      userData
-    ).pipe(
-      tap(response => {
-        if (response.token && response.name) {
-          this.saveUserData(response.name, userData.email, response.token);
-          this.authState.syncFromStorage();
-        }
-      }),
-      catchError(this.handleHttpError('Register'))
-    );
+    return this.http.post<LoginResponse>(this.basePaths.register, userData)
+      .pipe(
+        this.handleAuthSuccess('register', userData.email),
+        this.handleHttpError('register')
+      );
+  }
+
+  updateProfile(profileData: UpdateProfileRequest): Observable<UpdateProfileResponse> {
+    this.guardAuthenticated();
+    
+    return this.http.put<UpdateProfileResponse>(this.basePaths.profile, profileData)
+      .pipe(
+        this.handleProfileUpdate(profileData),
+        this.handleHttpError('updateProfile')
+      );
+  }
+
+  getProfile(): Observable<AuthProfileResponse> {
+    this.guardAuthenticated();
+    
+    return this.http.get<AuthProfileResponse>(this.basePaths.profile)
+      .pipe(
+        this.handleProfileSync(),
+        this.handleHttpError('getProfile')
+      );
+  }
+
+  updateAvatarKey(avatarKey: string): Observable<AuthProfileResponse> {
+    this.guardAuthenticated();
+    
+    return this.http.put<AuthProfileResponse>(this.basePaths.avatar, { avatarKey })
+      .pipe(
+        this.handleAvatarUpdate(),
+        this.handleHttpError('updateAvatarKey')
+      );
+  }
+
+  changePassword(passwordData: ChangePasswordRequest): Observable<ChangePasswordResponse> {
+    this.guardAuthenticated();
+    
+    return this.http.put<ChangePasswordResponse>(this.basePaths.password, passwordData)
+      .pipe(this.handleHttpError('changePassword'));
   }
 
   logout(): void {
     this.storage.clear(AUTH_STORAGE_KEY_LIST);
     this.authState.clear();
-  }
-
-  getUserEmail(): string | null {
-    return this.storage.get(AUTH_STORAGE_KEYS.USER_EMAIL);
-  }
-
-  getUserAvatarKey(): string | null {
-    const key = this.storage.get(AUTH_STORAGE_KEYS.USER_AVATAR_KEY);
-    if (key) return key;
-
-    // Compat: versões antigas podem ter salvo no userAvatarUrl
-    const legacy = this.storage.get(AUTH_STORAGE_KEYS.USER_AVATAR_URL);
-    if (legacy && !/^https?:\/\//i.test(legacy) && !legacy.includes('/')) {
-      this.storage.set(AUTH_STORAGE_KEYS.USER_AVATAR_KEY, legacy);
-      return legacy;
-    }
-    return null;
-  }
-
-  setUserAvatarKey(value: string | null): void {
-    if (!value) {
-      this.storage.remove(AUTH_STORAGE_KEYS.USER_AVATAR_KEY);
-      this.authState.syncFromStorage();
-      return;
-    }
-    this.storage.set(AUTH_STORAGE_KEYS.USER_AVATAR_KEY, value);
-    this.authState.syncFromStorage();
+    this.logger.info('User logged out successfully');
   }
 
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    return isNonEmptyString(this.getToken());
   }
 
   getToken(): string | null {
@@ -110,94 +115,118 @@ export class AuthService {
     return this.storage.get(AUTH_STORAGE_KEYS.USER_NAME);
   }
 
-  updateProfile(profileData: UpdateProfileRequest): Observable<UpdateProfileResponse> {
-    if (!this.isAuthenticated()) {
-      return throwError(() => new Error('User is not authenticated'));
-    }
-
-    return this.http.put<UpdateProfileResponse>(
-      apiUrl(API_PATHS.auth.profile),
-      profileData
-    ).pipe(
-      tap(response => {
-        const updatedData = response || profileData;
-        const currentName = this.getUserName();
-        const currentEmail = this.getUserEmail();
-        
-        if (updatedData.name && updatedData.name !== currentName) {
-          this.storage.set(AUTH_STORAGE_KEYS.USER_NAME, updatedData.name);
-        }
-        if (updatedData.email && updatedData.email !== currentEmail) {
-          this.storage.set(AUTH_STORAGE_KEYS.USER_EMAIL, updatedData.email);
-        }
-        if (typeof updatedData.avatarKey !== 'undefined') {
-          if (updatedData.avatarKey) {
-            this.storage.set(AUTH_STORAGE_KEYS.USER_AVATAR_KEY, updatedData.avatarKey);
-          } else {
-            this.storage.remove(AUTH_STORAGE_KEYS.USER_AVATAR_KEY);
-          }
-        }
-
-        this.authState.syncFromStorage();
-      }),
-      catchError(this.handleHttpError('Update profile'))
-    );
+  getUserEmail(): string | null {
+    return this.storage.get(AUTH_STORAGE_KEYS.USER_EMAIL);
   }
 
-  getProfile(): Observable<AuthProfileResponse> {
-    if (!this.isAuthenticated()) {
-      return throwError(() => new Error('User is not authenticated'));
+  getUserAvatarKey(): string | null {
+    const avatarKey = this.storage.get(AUTH_STORAGE_KEYS.USER_AVATAR_KEY);
+    
+    if (isNonEmptyString(avatarKey)) {
+      return avatarKey;
     }
 
-    return this.http.get<AuthProfileResponse>(
-      apiUrl(API_PATHS.auth.profile)
-    ).pipe(
-      tap(profile => {
-        this.storage.set(AUTH_STORAGE_KEYS.USER_NAME, profile.name);
-        this.storage.set(AUTH_STORAGE_KEYS.USER_EMAIL, profile.email);
-        if (profile.avatarKey) {
-          this.storage.set(AUTH_STORAGE_KEYS.USER_AVATAR_KEY, profile.avatarKey);
-        } else {
-          this.storage.remove(AUTH_STORAGE_KEYS.USER_AVATAR_KEY);
-        }
-        this.authState.syncFromStorage();
-      }),
-      catchError(this.handleHttpError('Get profile'))
-    );
+    // Legacy migration
+    const legacyAvatarUrl = this.storage.get(AUTH_STORAGE_KEYS.USER_AVATAR_URL);
+    if (isNonEmptyString(legacyAvatarUrl) && this.isLegacyAvatarKey(legacyAvatarUrl)) {
+      this.storage.set(AUTH_STORAGE_KEYS.USER_AVATAR_KEY, legacyAvatarUrl);
+      return legacyAvatarUrl;
+    }
+
+    return null;
   }
 
-  updateAvatarKey(avatarKey: string): Observable<AuthProfileResponse> {
-    if (!this.isAuthenticated()) {
-      return throwError(() => new Error('User is not authenticated'));
+  setUserAvatarKey(avatarKey: string | null): void {
+    if (!avatarKey) {
+      this.storage.remove(AUTH_STORAGE_KEYS.USER_AVATAR_KEY);
+    } else {
+      this.storage.set(AUTH_STORAGE_KEYS.USER_AVATAR_KEY, avatarKey);
     }
-
-    return this.http.put<AuthProfileResponse>(
-      apiUrl(API_PATHS.auth.avatar),
-      { avatarKey }
-    ).pipe(
-      tap(profile => {
-        if (profile.avatarKey) {
-          this.storage.set(AUTH_STORAGE_KEYS.USER_AVATAR_KEY, profile.avatarKey);
-        } else {
-          this.storage.remove(AUTH_STORAGE_KEYS.USER_AVATAR_KEY);
-        }
-        this.authState.syncFromStorage();
-      }),
-      catchError(this.handleHttpError('Update avatar'))
-    );
+    
+    this.authState.syncFromStorage();
   }
 
-  changePassword(passwordData: ChangePasswordRequest): Observable<ChangePasswordResponse> {
-    if (!this.isAuthenticated()) {
-      return throwError(() => new Error('User is not authenticated'));
+  private handleAuthSuccess(operation: string, email: string): OperatorFunction<LoginResponse, LoginResponse> {
+    return tap(response => {
+      if (isNonEmptyString(response.token) && isNonEmptyString(response.name)) {
+        this.saveUserData({ name: response.name, email }, response.token);
+        this.authState.syncFromStorage();
+        this.logger.info(`${operation} successful`);
+      }
+    });
+  }
+
+  private handleProfileUpdate(profileData: UpdateProfileRequest): OperatorFunction<UpdateProfileResponse, UpdateProfileResponse> {
+    return tap(response => {
+      const updatedData = response || profileData;
+      this.syncUserData(updatedData);
+      this.authState.syncFromStorage();
+      this.logger.info('Profile updated successfully');
+    });
+  }
+
+  private handleProfileSync(): OperatorFunction<AuthProfileResponse, AuthProfileResponse> {
+    return tap(profile => {
+      this.syncUserData(profile);
+      this.authState.syncFromStorage();
+      this.logger.debug('Profile synced from server');
+    });
+  }
+
+  private handleAvatarUpdate(): OperatorFunction<AuthProfileResponse, AuthProfileResponse> {
+    return tap(profile => {
+      this.syncAvatarKey(profile.avatarKey);
+      this.authState.syncFromStorage();
+      this.logger.info('Avatar updated successfully');
+    });
+  }
+
+  private handleHttpError<T>(operation: string): OperatorFunction<T, T> {
+    return catchError((error: unknown) => {
+      this.logger.error(`[${operation}] HTTP error:`, error);
+      return throwError(() => error);
+    }) as OperatorFunction<T, T>;
+  }
+
+  private saveUserData(userData: UserData, token?: string): void {
+    if (token) {
+      this.storage.set(AUTH_STORAGE_KEYS.TOKEN, token);
+    }
+    
+    this.storage.set(AUTH_STORAGE_KEYS.USER_NAME, userData.name);
+    this.storage.set(AUTH_STORAGE_KEYS.USER_EMAIL, userData.email);
+  }
+
+  private syncUserData(data: Partial<{ name: string; email: string; avatarKey: string | null }>): void {
+    const name = data.name;
+    if (isNonEmptyString(name) && name !== this.getUserName()) {
+      this.storage.set(AUTH_STORAGE_KEYS.USER_NAME, name);
     }
 
-    return this.http.put<ChangePasswordResponse>(
-      apiUrl(API_PATHS.auth.password),
-      passwordData
-    ).pipe(
-      catchError(this.handleHttpError('Change password'))
-    );
+    const email = data.email;
+    if (isNonEmptyString(email) && email !== this.getUserEmail()) {
+      this.storage.set(AUTH_STORAGE_KEYS.USER_EMAIL, email);
+    }
+
+    this.syncAvatarKey(data.avatarKey);
+  }
+
+  private syncAvatarKey(avatarKey: string | null | undefined): void {
+    if (isNonEmptyString(avatarKey)) {
+      this.storage.set(AUTH_STORAGE_KEYS.USER_AVATAR_KEY, avatarKey);
+    } else {
+      this.storage.remove(AUTH_STORAGE_KEYS.USER_AVATAR_KEY);
+    }
+  }
+
+  private guardAuthenticated(): asserts this is { isAuthenticated: () => true } {
+    if (!this.isAuthenticated()) {
+      this.logger.warn('Attempted authenticated operation without valid token');
+      throw new Error('User is not authenticated');
+    }
+  }
+
+  private isLegacyAvatarKey(avatarUrl: string | null): boolean {
+    return !!avatarUrl && !/^https?:\/\//i.test(avatarUrl) && !avatarUrl.includes('/');
   }
 }
-

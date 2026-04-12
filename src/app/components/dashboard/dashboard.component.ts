@@ -7,5 +7,6 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   templateUrl: './dashboard.component.html'
 })
+
 export class DashboardComponent {}
 

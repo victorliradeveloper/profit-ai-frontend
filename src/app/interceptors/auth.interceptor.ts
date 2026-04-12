@@ -1,57 +1,131 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { AuthService } from '../services/auth/auth.service';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, Observable, throwError } from 'rxjs';
+import { AuthService } from '../services/auth/auth.service';
+import { LoggerService } from '../services/logger/logger.service';
 import { API_PATHS } from '../services/http/api-paths';
 
-export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(AuthService);
-  const router = inject(Router);
-  const token = authService.getToken();
+const LOGIN_ROUTE = '/login' as const;
+const AUTH_INTERCEPTOR_LOG = 'AuthInterceptor';
 
-  const isAuthenticatedRequest = !!token && !req.headers.has('Authorization');
-  const requestToSend = isAuthenticatedRequest
-    ? req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-    : req;
+const SESSION_INVALID_STATUSES = [401, 403] as const;
+type SessionInvalidStatus = (typeof SESSION_INVALID_STATUSES)[number];
+
+interface AuthInterceptorContext {
+  authService: AuthService;
+  router: Router;
+  logger: LoggerService;
+}
+
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const context = createInterceptorContext();
+  const { authService, logger } = context;
+
+  const token = authService.getToken();
+  const requestToSend = createAuthenticatedRequest(req, token);
+  const interceptorAddedBearer = shouldAttachBearerToken(req, token);
+
+  logger.debug(AUTH_INTERCEPTOR_LOG, {
+    url: req.url,
+    hasToken: !!token,
+    interceptorAddedBearer,
+  });
 
   return next(requestToSend).pipe(
-    catchError((error: unknown) => {
-      const status = getHttpStatus(error);
-
-      // When the token is expired/invalid, don't keep the app in a "half-authenticated" state.
-      // Only do this if THIS request was authenticated by us (Bearer token attached).
-      if (
-        isAuthenticatedRequest &&
-        isSessionInvalidStatus(status) &&
-        !isAuthExcludedEndpoint(requestToSend.url)
-      ) {
-        authService.logout();
-        void router.navigate(['/login']);
-      }
-      return throwError(() => error);
-    }),
+    catchError((error) =>
+      handleAuthError(error, context, interceptorAddedBearer, requestToSend)
+    )
   );
 };
 
-function getHttpStatus(error: unknown): number | undefined {
-  if (error instanceof HttpErrorResponse) return error.status;
-  if (typeof error !== 'object' || error === null) return undefined;
-  if (!('status' in error)) return undefined;
+function createInterceptorContext(): AuthInterceptorContext {
+  return {
+    authService: inject(AuthService),
+    router: inject(Router),
+    logger: inject(LoggerService),
+  };
+}
+
+function shouldAttachBearerToken(
+  req: HttpRequest<unknown>,
+  token: string | null
+): boolean {
+  return !!token && !req.headers.has('Authorization');
+}
+
+function createAuthenticatedRequest(
+  req: HttpRequest<unknown>,
+  token: string | null
+): HttpRequest<unknown> {
+  if (!shouldAttachBearerToken(req, token)) {
+    return req;
+  }
+
+  return req.clone({
+    setHeaders: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+function handleAuthError(
+  error: unknown,
+  { authService, router, logger }: AuthInterceptorContext,
+  interceptorAddedBearer: boolean,
+  request: HttpRequest<unknown>
+): Observable<never> {
+  const status = extractHttpStatus(error);
+
+  logger.warn(`${AUTH_INTERCEPTOR_LOG} error`, {
+    status,
+    url: request.url,
+    interceptorAddedBearer,
+  });
+
+  if (shouldLogout(interceptorAddedBearer, status, request.url)) {
+    logger.info('Session invalid - logging out and redirecting to login');
+    authService.logout();
+    void router.navigate([LOGIN_ROUTE]);
+  }
+
+  return throwError(() => error);
+}
+
+function extractHttpStatus(error: unknown): number | undefined {
+  if (error instanceof HttpErrorResponse) {
+    return error.status;
+  }
+
+  if (typeof error !== 'object' || error === null || !('status' in error)) {
+    return undefined;
+  }
+
   const status = (error as { status?: unknown }).status;
   return typeof status === 'number' ? status : undefined;
 }
 
-function isSessionInvalidStatus(status: number | undefined): boolean {
-  return status === 401 || status === 403;
+function shouldLogout(
+  interceptorAddedBearer: boolean,
+  status: number | undefined,
+  url: string
+): boolean {
+  return (
+    interceptorAddedBearer &&
+    isSessionInvalidStatus(status) &&
+    !isAuthExcludedEndpoint(url)
+  );
+}
+
+function isSessionInvalidStatus(
+  status: number | undefined
+): status is SessionInvalidStatus {
+  return SESSION_INVALID_STATUSES.includes(status as SessionInvalidStatus);
 }
 
 function isAuthExcludedEndpoint(url: string): boolean {
-  // Avoid logging out due to failed login/register attempts.
-  return url.includes(API_PATHS.auth.login) || url.includes(API_PATHS.auth.register);
+  return (
+    url.includes(API_PATHS.auth.login) ||
+    url.includes(API_PATHS.auth.register)
+  );
 }
-

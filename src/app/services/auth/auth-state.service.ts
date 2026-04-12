@@ -14,6 +14,7 @@ export type AuthSession = {
 @Injectable({
   providedIn: 'root'
 })
+
 export class AuthStateService {
   private readonly sessionSubject: BehaviorSubject<AuthSession>;
   readonly session$;
